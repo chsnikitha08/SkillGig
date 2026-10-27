@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { errorMessage } from '../api/http';
 import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../components/AuthLayout';
+import RoleTabs from '../components/RoleTabs';
 import { ErrorBanner, Field } from '../components/ui';
 
 export default function Login() {
@@ -10,6 +11,13 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const [form, setForm] = useState({ email: '', password: '' });
+  // Remember the last choice so returning users don't have to switch every time.
+  const [role, setRole] = useState(() => localStorage.getItem('skillgig_last_role') || 'client');
+  const pickRole = (r) => {
+    setRole(r);
+    setError('');
+    localStorage.setItem('skillgig_last_role', r);
+  };
   const [error, setError] = useState('');
   const [pending, setPending] = useState(false);
 
@@ -18,7 +26,7 @@ export default function Login() {
     setPending(true);
     setError('');
     try {
-      const user = await login(form.email, form.password);
+      const user = await login(form.email, form.password, role);
       navigate(location.state?.from || (user.role === 'admin' ? '/admin' : '/dashboard'), { replace: true });
     } catch (err) {
       setError(errorMessage(err));
@@ -30,6 +38,7 @@ export default function Login() {
   return (
     <AuthLayout title="Welcome back" subtitle="Log in to manage your gigs, payments and messages.">
       <form onSubmit={submit} className="space-y-5">
+        <RoleTabs value={role} onChange={pickRole} />
         <ErrorBanner message={error} />
         <Field label="Email">
           <input className="input" type="email" required autoComplete="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
@@ -38,7 +47,7 @@ export default function Login() {
           <input className="input" type="password" required autoComplete="current-password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
         </Field>
         <button className="btn-primary w-full py-3" disabled={pending}>
-          {pending ? 'Logging in…' : 'Log in'}
+          {pending ? 'Logging in…' : `Log in as ${role === 'client' ? 'client' : 'freelancer'}`}
         </button>
         <p className="text-center text-sm text-gray-600">
           New to SkillGig? <Link to="/register" className="link">Create an account</Link>

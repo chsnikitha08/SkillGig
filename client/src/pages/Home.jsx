@@ -35,10 +35,28 @@ export default function Home() {
   );
 }
 
+const HERO = {
+  hire: {
+    title: 'Hire talented students for any task, online.',
+    text: 'Logos, notes, websites, videos and more, from students on your campus. Your payment stays protected until you approve the work.',
+    placeholder: 'What do you need done?',
+    button: 'Search',
+  },
+  work: {
+    title: 'Get paid for what you’re great at.',
+    text: 'Pick up gigs from students around you. The payment is secured before you start, so you’ll never chase anyone for money again.',
+    placeholder: 'What can you do? Try “logo” or “react”',
+    button: 'Find work',
+  },
+};
+
 function Hero() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [mode, setMode] = useState(user?.role === 'freelancer' ? 'work' : 'hire');
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('');
+  const copy = HERO[mode];
 
   const search = (e) => {
     e.preventDefault();
@@ -56,16 +74,33 @@ function Hero() {
     <section className="relative flex min-h-[560px] items-center bg-cover bg-center" style={{ backgroundImage: "url('/hero.jpg')" }}>
       <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/50 to-black/10" />
       <div className="container-page relative pb-16 pt-28">
-        <h1 className="max-w-xl text-4xl font-bold leading-tight text-white sm:text-5xl">Hire talented students for any task, online.</h1>
-        <p className="mt-4 max-w-lg text-white/85">
-          Logos, notes, websites, videos and more, from students on your campus. Your payment stays protected until you approve the work.
+        <div className="mb-6 inline-flex rounded-full bg-white/10 p-1 ring-1 ring-white/20 backdrop-blur">
+          {[
+            ['hire', 'Hire talent'],
+            ['work', 'Find work'],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setMode(key)}
+              className={`rounded-full px-5 py-1.5 text-sm font-semibold transition ${mode === key ? 'bg-white text-ink shadow' : 'text-white/85 hover:text-white'}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <h1 key={mode} className="max-w-xl animate-[fadeUp_.4s_ease-out] text-4xl font-bold leading-tight text-white sm:text-5xl">
+          {copy.title}
+        </h1>
+        <p key={`${mode}-text`} className="mt-4 max-w-lg animate-[fadeUp_.5s_ease-out] text-white/85">
+          {copy.text}
         </p>
         <form onSubmit={search} className="mt-8 flex max-w-2xl flex-col gap-2 rounded-xl bg-white p-2 shadow-xl sm:flex-row sm:items-center">
           <div className="flex flex-1 items-center gap-2 px-3">
             <Search className="h-4 w-4 shrink-0 text-gray-400" />
             <input
               className="w-full py-2.5 text-sm outline-none placeholder:text-gray-400"
-              placeholder="What are you looking for?"
+              placeholder={copy.placeholder}
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
@@ -82,7 +117,7 @@ function Hero() {
               </option>
             ))}
           </select>
-          <button className="btn-primary px-8">Search</button>
+          <button className="btn-primary px-8">{copy.button}</button>
         </form>
         <p className="mt-5 flex flex-wrap items-center gap-2 text-sm text-white/80">
           Popular:

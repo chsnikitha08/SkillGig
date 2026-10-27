@@ -18,6 +18,8 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email('must be a valid email'),
   password: z.string().min(1, 'is required'),
+  // Which tab the user picked on the login page. Optional so API clients can omit it.
+  role: z.enum(['client', 'freelancer']).optional(),
 });
 
 export const updateProfileSchema = z.object({

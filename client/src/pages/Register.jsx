@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { errorMessage } from '../api/http';
 import { useAuth } from '../context/AuthContext';
 import AuthLayout from '../components/AuthLayout';
+import RoleTabs from '../components/RoleTabs';
 import { ErrorBanner, Field } from '../components/ui';
 
 export default function Register() {
@@ -20,6 +21,7 @@ export default function Register() {
     try {
       const skills = form.skills.split(',').map((s) => s.trim()).filter(Boolean);
       await register({ ...form, skills });
+      localStorage.setItem('skillgig_last_role', form.role);
       navigate('/dashboard', { replace: true });
     } catch (err) {
       setError(errorMessage(err));
@@ -32,24 +34,10 @@ export default function Register() {
     <AuthLayout title="Create your account" subtitle="Join SkillGig to hire students or start earning from your skills.">
       <form onSubmit={submit} className="space-y-5">
         <ErrorBanner message={error} />
-        <fieldset>
-          <legend className="label">I want to</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {[
-              ['client', 'Hire students'],
-              ['freelancer', 'Find work'],
-            ].map(([role, label]) => (
-              <button
-                key={role}
-                type="button"
-                onClick={() => setForm({ ...form, role })}
-                className={`rounded-lg border px-3 py-3 text-sm ${form.role === role ? 'border-brand-500 bg-brand-50 font-semibold text-brand-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        </fieldset>
+        <div>
+          <p className="label">I'm joining as a</p>
+          <RoleTabs value={form.role} onChange={(role) => setForm({ ...form, role })} />
+        </div>
         <Field label="Name">
           <input className="input" required minLength={2} value={form.name} onChange={set('name')} />
         </Field>
@@ -65,7 +53,7 @@ export default function Register() {
           </Field>
         )}
         <button className="btn-primary w-full py-3" disabled={pending}>
-          {pending ? 'Creating account…' : 'Sign up'}
+          {pending ? 'Creating account…' : `Sign up as ${form.role === 'client' ? 'client' : 'freelancer'}`}
         </button>
         <p className="text-center text-sm text-gray-600">
           Already have an account? <Link to="/login" className="link">Log in</Link>

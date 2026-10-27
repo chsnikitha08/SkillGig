@@ -28,6 +28,17 @@ describe('auth', () => {
     assert.equal(bad.status, 401);
   });
 
+  it('checks the account type picked on the login page', async () => {
+    await registerUser('freelancer', { email: 'f@test.dev' });
+    const login = (role, password = 'password123') => api().post('/api/auth/login').send({ email: 'f@test.dev', password, role });
+    assert.equal((await login('freelancer')).status, 200);
+    const wrong = await login('client');
+    assert.equal(wrong.status, 403);
+    assert.equal(wrong.body.error.code, 'WRONG_ACCOUNT_TYPE');
+    // A wrong password still says only "incorrect", whatever tab was picked.
+    assert.equal((await login('client', 'bad-password')).status, 401);
+  });
+
   it('does not allow signing up as admin', async () => {
     const res = await api()
       .post('/api/auth/register')

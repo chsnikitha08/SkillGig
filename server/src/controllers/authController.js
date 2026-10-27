@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { User } from '../models/User.js';
 import { signToken } from '../utils/jwt.js';
-import { conflict, unauthorized } from '../utils/AppError.js';
+import { conflict, forbidden, unauthorized } from '../utils/AppError.js';
 
 const SALT_ROUNDS = 10;
 
@@ -15,11 +15,16 @@ export async function register(req, res) {
 }
 
 export async function login(req, res) {
-  const { email, password } = req.valid.body;
+  const { email, password, role } = req.valid.body;
   const user = await User.findOne({ email }).select('+passwordHash');
   // Same message for unknown email and wrong password so accounts can't be enumerated.
   const ok = user && (await bcrypt.compare(password, user.passwordHash));
   if (!ok) throw unauthorized('Incorrect email or password', 'BAD_CREDENTIALS');
+  // Checked only after the password, so it can't be used to discover which emails exist.
+  // Admins aren't offered as a tab and may log in from either one.
+  if (role && user.role !== 'admin' && user.role !== role) {
+    throw forbidden(`This is a ${user.role} account. Switch to "${user.role === 'client' ? 'Client' : 'Freelancer'}" to log in.`, 'WRONG_ACCOUNT_TYPE');
+  }
   res.json({ token: signToken(user), user });
 }
 
