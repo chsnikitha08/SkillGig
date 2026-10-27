@@ -1,25 +1,12 @@
 import { after, before, beforeEach, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { api, registerUser, resetDb, setup, teardown } from './helpers.js';
+import { api, gigBody, registerUser, resetDb, setup, teardown } from './helpers.js';
+
+const inDays = (d) => new Date(Date.now() + d * 86400000).toISOString();
 
 before(setup);
 after(teardown);
 beforeEach(resetDb);
-
-const inDays = (d) => new Date(Date.now() + d * 86400000).toISOString();
-
-export const gigBody = (over = {}) => ({
-  title: 'Logo design for college fest',
-  description: 'Need a clean modern logo for our annual tech fest, vector format.',
-  skillsRequired: ['Design', 'figma'],
-  budget: 3000,
-  deadline: inDays(7),
-  milestones: [
-    { title: 'Concepts', amount: 1000 },
-    { title: 'Final logo', amount: 2000 },
-  ],
-  ...over,
-});
 
 describe('gigs and applications', () => {
   it('only clients can post, and milestones must add up to the budget', async () => {

@@ -48,3 +48,40 @@ export async function registerUser(role, overrides = {}) {
 }
 
 export const api = () => request(app);
+
+const inDays = (d) => new Date(Date.now() + d * 86400000).toISOString();
+
+export const gigBody = (over = {}) => ({
+  title: 'Logo design for college fest',
+  description: 'Need a clean modern logo for our annual tech fest, vector format.',
+  skillsRequired: ['design', 'figma'],
+  budget: 3000,
+  deadline: inDays(7),
+  milestones: [
+    { title: 'Concepts', amount: 1000 },
+    { title: 'Final logo', amount: 2000 },
+  ],
+  ...over,
+});
+
+/** Client posts, freelancer applies at `quote`, client accepts. Returns everything. */
+export async function acceptedGig({ quote = 3000, gig: over } = {}) {
+  const client = await registerUser('client');
+  const freelancer = await registerUser('freelancer');
+  const gig = (await api().post('/api/gigs').set(client.auth).send(gigBody(over))).body.gig;
+  const app_ = await api()
+    .post(`/api/gigs/${gig._id}/apply`)
+    .set(freelancer.auth)
+    .send({ pitch: 'I can do this well and quickly, see my portfolio.', quotedPrice: quote });
+  const acc = await api().post(`/api/applications/${app_.body.application._id}/accept`).set(client.auth);
+  return { client, freelancer, gig: acc.body.gig };
+}
+
+export async function fundedGig(opts) {
+  const ctx = await acceptedGig(opts);
+  await api().post('/api/wallet/topup').set(ctx.client.auth).send({ amount: 5000 });
+  const res = await api().post(`/api/gigs/${ctx.gig._id}/fund`).set(ctx.client.auth);
+  return { ...ctx, gig: res.body.gig };
+}
+
+export const balanceOf = async (u) => (await api().get('/api/wallet').set(u.auth)).body;
