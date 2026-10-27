@@ -56,7 +56,9 @@ export default function Chat({ gigId, readOnly }) {
                       {m.sender.role === 'admin' && ' (admin)'}
                     </p>
                   )}
-                  <p className="whitespace-pre-line">{m.text}</p>
+                  <p className="whitespace-pre-line break-words">
+                    <Linkified text={m.text} mine={mine} />
+                  </p>
                   <p className={`mt-1 text-[10px] ${mine ? 'text-brand-200' : 'text-gray-400'}`}>{dateTime(m.createdAt)}</p>
                 </div>
               </div>
@@ -74,5 +76,19 @@ export default function Chat({ gigId, readOnly }) {
         </form>
       )}
     </div>
+  );
+}
+
+/** Turns http(s) links in a message into clickable links; everything else stays plain text. */
+function Linkified({ text, mine }) {
+  return text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
+    /^https?:\/\//.test(part) ? (
+      // eslint-disable-next-line react/no-array-index-key
+      <a key={i} href={part} target="_blank" rel="noreferrer noopener" className={`underline ${mine ? 'text-white' : 'text-brand-700'}`}>
+        {part}
+      </a>
+    ) : (
+      part
+    ),
   );
 }
