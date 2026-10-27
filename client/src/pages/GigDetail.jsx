@@ -59,10 +59,12 @@ export default function GigDetail() {
           </div>
         </section>
 
+        {gig.status !== 'cancelled' && <ProgressTracker gig={gig} />}
+
         <NextStep gig={gig} isClient={isClient} isFreelancer={isFreelancer} onChanged={changed} />
 
         <section className="card">
-          <h2 className="mb-3 font-semibold">Milestones</h2>
+          <h2 className="mb-3 font-semibold">{gig.milestones.length > 1 ? 'Project stages' : 'Delivery'}</h2>
           <MilestoneList gig={gig} isClient={isClient} isFreelancer={isFreelancer} disputes={disputes} onChanged={changed} />
         </section>
 
@@ -86,7 +88,7 @@ export default function GigDetail() {
           <dl className="space-y-2">
             <Row label="Budget" value={money(gig.budget)} />
             {gig.agreedAmount && <Row label="Agreed price" value={money(gig.agreedAmount)} />}
-            <Row label="In escrow now" value={money(gig.escrowHeld)} />
+            {gig.status === 'in_progress' && <Row label="Payment secured" value={<span className="text-emerald-700">🛡 {money(gig.escrowHeld)}</span>} />}
             <Row label="Client" value={<>{gig.client.name} <span className="text-gray-400">{rating(gig.client)}</span></>} />
             {gig.freelancer && (
               <Row
@@ -111,6 +113,40 @@ export default function GigDetail() {
   );
 }
 
+const STEPS = ['Posted', 'Hired', 'Payment secured', 'Work in progress', 'Completed'];
+
+/** Shows where the project is, in the order both sides experience it. */
+function ProgressTracker({ gig }) {
+  const settled = gig.milestones.filter((m) => ['released', 'refunded', 'split'].includes(m.status)).length;
+  const current = { open: 0, accepted: 1, in_progress: 3, completed: 4 }[gig.status] ?? 0;
+  return (
+    <ol className="card flex items-center gap-2 overflow-x-auto py-3 text-xs sm:text-sm">
+      {STEPS.map((label, i) => {
+        const done = i < current || gig.status === 'completed';
+        const active = i === current && gig.status !== 'completed';
+        return (
+          <li key={label} className="flex min-w-fit flex-1 items-center gap-2">
+            <span
+              className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
+                done ? 'bg-emerald-600 text-white' : active ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'
+              }`}
+            >
+              {done ? '✓' : i + 1}
+            </span>
+            <span className={done || active ? 'font-medium text-gray-900' : 'text-gray-400'}>
+              {label}
+              {i === 3 && gig.milestones.length > 1 && gig.status === 'in_progress' && (
+                <span className="ml-1 text-gray-500">({settled}/{gig.milestones.length})</span>
+              )}
+            </span>
+            {i < STEPS.length - 1 && <span className={`h-px flex-1 ${done ? 'bg-emerald-600' : 'bg-gray-200'}`} />}
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 function Row({ label, value }) {
   return (
     <div className="flex justify-between gap-2">
@@ -131,7 +167,7 @@ function NextStep({ gig, isClient, isFreelancer, onChanged }) {
     try {
       const res = await payForGig(gig._id);
       if (res.cancelled) toast('Payment cancelled. Nothing was charged.', 'error');
-      else if (res.gig?.status === 'in_progress') toast(`Payment verified. ${money(gig.agreedAmount)} is now held in escrow.`);
+      else if (res.gig?.status === 'in_progress') toast(`Payment successful. ${gig.freelancer.name} can now start working.`);
       else toast('Payment not confirmed yet. Use "Check payment status" in a moment.', 'error');
       onChanged();
     } catch (err) {
@@ -163,16 +199,16 @@ function NextStep({ gig, isClient, isFreelancer, onChanged }) {
     body = (
       <>
         <p>
-          Pay <b>{money(gig.agreedAmount)}</b> into escrow so {gig.freelancer.name} can start. SkillGig holds it and releases each milestone only
-          when you approve it.
+          Pay <b>{money(gig.agreedAmount)}</b> so {gig.freelancer.name} can start. SkillGig keeps your payment safe and only pays the freelancer
+          when you approve the work.
         </p>
-        <p className="mt-1 text-xs">Secure checkout by Razorpay (test mode: card 4386 2894 0766 0153, any future expiry, any CVV, or UPI success@razorpay).</p>
+        <p className="mt-1 text-xs">🔒 Secure checkout powered by Razorpay.</p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <button type="button" className="btn-primary" disabled={paying || pending} onClick={pay}>
-            {paying ? 'Processing payment…' : `Pay ${money(gig.agreedAmount)} with Razorpay`}
+            {paying ? 'Processing payment…' : `Pay ${money(gig.agreedAmount)} securely`}
           </button>
           <button type="button" className="link text-sm" disabled={pending || paying} onClick={sync}>
-            Already paid? Check payment status
+            Already paid? Refresh status
           </button>
         </div>
       </>
@@ -180,19 +216,19 @@ function NextStep({ gig, isClient, isFreelancer, onChanged }) {
   }
   if (gig.status === 'accepted' && isFreelancer) {
     tone = 'bg-amber-50 border-amber-200 text-amber-900';
-    body = 'You were hired! Wait until the client pays into escrow before starting work.';
+    body = 'Congratulations, you’re hired! You can start as soon as the client completes the payment.';
   }
   if (gig.status === 'in_progress' && isFreelancer) {
     tone = 'bg-emerald-50 border-emerald-200 text-emerald-900';
-    body = `✓ Funds secured: ${money(gig.escrowHeld)} is locked in escrow for you. Submit each milestone when ready.`;
+    body = `🛡 Payment secured. ${money(gig.escrowHeld)} is reserved for you and will be paid as the client approves your work.`;
   }
   if (gig.status === 'in_progress' && isClient) {
     tone = 'bg-indigo-50 border-indigo-200 text-indigo-900';
-    body = `${money(gig.escrowHeld)} is held in escrow. Approve submitted milestones to release payment.`;
+    body = `🛡 Your payment of ${money(gig.agreedAmount)} is held safely. The freelancer is paid only when you approve their work.`;
   }
   if (gig.status === 'completed') {
     tone = 'bg-emerald-50 border-emerald-200 text-emerald-900';
-    body = 'This gig is complete and every milestone is settled.';
+    body = '🎉 This project is complete.';
   }
   if (gig.status === 'cancelled') body = 'This gig was cancelled. Any payment made for it is refunded automatically.';
 
@@ -248,7 +284,7 @@ function ApplyBox({ gig, application, onChanged }) {
       <Field label="Your pitch" hint="Why you? Mention similar work. At least 20 characters.">
         <textarea className="input min-h-24" required minLength={20} value={pitch} onChange={(e) => setPitch(e.target.value)} />
       </Field>
-      <Field label="Your price (₹)" hint={gig.milestones.length > 1 ? 'Milestone amounts will be scaled to your price if accepted.' : undefined}>
+      <Field label="Your price (₹)" hint={gig.milestones.length > 1 ? 'If you’re hired, each stage’s amount is adjusted to match your price.' : undefined}>
         <input className="input w-40" type="number" min={gig.milestones.length} required value={quote} onChange={(e) => setQuote(e.target.value)} />
       </Field>
       <button className="btn-primary" disabled={pending}>

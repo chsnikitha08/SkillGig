@@ -27,7 +27,7 @@ export default function DisputeDetail() {
             <div>
               <h1 className="text-xl font-semibold">Dispute: {milestone.title}</h1>
               <p className="text-sm text-gray-500">
-                On <Link className="link" to={`/gigs/${gig._id}`}>{gig.title}</Link> · {money(dispute.amount)} in escrow
+                On <Link className="link" to={`/gigs/${gig._id}`}>{gig.title}</Link> · {money(dispute.amount)} on hold
               </p>
             </div>
             <StatusBadge status={dispute.status} />
@@ -51,7 +51,7 @@ export default function DisputeDetail() {
               {milestone.submittedAt && <p className="mt-1 text-xs text-gray-500">Submitted {dateTime(milestone.submittedAt)}</p>}
             </>
           ) : (
-            <p className="text-gray-500">Nothing was submitted for this milestone.</p>
+            <p className="text-gray-500">No work was submitted for this stage.</p>
           )}
           <p className="mt-2 text-xs text-gray-500">
             Revisions requested: {milestone.revisionCount} · Gig deadline {dateTime(gig.deadline)}
@@ -98,7 +98,7 @@ function Decision({ dispute }) {
         Resolved by {dispute.resolvedBy?.name ?? 'admin'}: {dispute.decision}
       </p>
       <p>
-        {money(dispute.freelancerAmount)} to freelancer · {money(dispute.clientAmount)} refunded to the client via Razorpay
+        {money(dispute.freelancerAmount)} to freelancer · {money(dispute.clientAmount)} refunded to the client
       </p>
       <p className="mt-2 whitespace-pre-line">{dispute.adminNote}</p>
     </section>
@@ -134,7 +134,7 @@ function ResolveForm({ dispute, onDone }) {
     e.preventDefault();
     if (!window.confirm(`Pay ${money(toFreelancer)} to the freelancer and refund ${money(dispute.amount - toFreelancer)} to the client?`)) return;
     const body = { decision, note, ...(decision === 'split' && { freelancerAmount: Number(share) }) };
-    if (await run(() => http.post(`/disputes/${dispute._id}/resolve`, body), 'Dispute resolved and escrow settled')) onDone();
+    if (await run(() => http.post(`/disputes/${dispute._id}/resolve`, body), 'Decision saved. Both parties have been notified.')) onDone();
   };
 
   return (
@@ -162,13 +162,13 @@ function ResolveForm({ dispute, onDone }) {
         </Field>
       )}
       <p className="text-sm text-gray-600">
-        Freelancer gets <b>{money(toFreelancer)}</b>, client gets back <b>{money(dispute.amount - toFreelancer)}</b> as a Razorpay refund.
+        Freelancer gets <b>{money(toFreelancer)}</b>, client gets back <b>{money(dispute.amount - toFreelancer)}</b> as a refund to their original payment method.
       </p>
       <Field label="Decision note" hint="Shown to both parties. At least 10 characters.">
         <textarea className="input" required minLength={10} value={note} onChange={(e) => setNote(e.target.value)} />
       </Field>
       <button className="btn-primary" disabled={pending}>
-        {pending ? 'Settling…' : 'Resolve and settle escrow'}
+        {pending ? 'Saving…' : 'Confirm decision'}
       </button>
     </form>
   );

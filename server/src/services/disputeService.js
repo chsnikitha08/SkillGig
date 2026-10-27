@@ -38,7 +38,7 @@ export async function raiseDispute(gigId, mid, user, reason) {
       { $set: { 'milestones.$.status': M.DISPUTED } },
       { new: true, session },
     );
-    if (!updated) throw conflict('This milestone changed. Refresh and try again.', 'INVALID_STATE');
+    if (!updated) throw conflict('This changed in the meantime. Refresh and try again.', 'INVALID_STATE');
 
     [dispute] = await Dispute.create(
       [

@@ -34,7 +34,7 @@ const runInTransaction = (fn) => mongoose.connection.transaction(fn);
 
 export function findMilestone(gig, mid) {
   const ms = gig.milestones.id(mid);
-  if (!ms) throw notFound('Milestone not found');
+  if (!ms) throw notFound('This stage of the project was not found');
   return ms;
 }
 
@@ -44,7 +44,7 @@ export async function submitMilestone(gigId, mid, user, { note, link }) {
   const gig = await findGigOr404(gigId);
   assertAssignedFreelancer(gig, user);
   if (gig.status !== GIG_STATUS.IN_PROGRESS) {
-    throw conflict(`Cannot submit work: the gig is ${gig.status.replace('_', ' ')}, not funded`, 'NOT_FUNDED');
+    throw conflict('You can submit work once the client has completed the payment', 'NOT_FUNDED');
   }
   const ms = findMilestone(gig, mid);
   assertMilestoneTransition(ms.status, M.SUBMITTED, 'submit work');
@@ -61,7 +61,7 @@ export async function submitMilestone(gigId, mid, user, { note, link }) {
     },
     { new: true },
   );
-  if (!updated) throw conflict('This milestone changed while submitting. Refresh and try again.', 'INVALID_STATE');
+  if (!updated) throw conflict('This changed while you were submitting. Refresh and try again.', 'INVALID_STATE');
   notify(gig.client, 'work_submitted', `Work submitted for "${ms.title}" on "${gig.title}". Review and approve it.`, gig._id);
   return { gig: updated };
 }
@@ -81,7 +81,7 @@ export async function requestRevision(gigId, mid, user, { note }) {
     { $set: { 'milestones.$.status': M.FUNDED, 'milestones.$.revisionNote': note }, $inc: { 'milestones.$.revisionCount': 1 } },
     { new: true },
   );
-  if (!updated) throw conflict('This milestone changed. Refresh and try again.', 'INVALID_STATE');
+  if (!updated) throw conflict('This changed in the meantime. Refresh and try again.', 'INVALID_STATE');
   notify(gig.freelancer, 'revision_requested', `Changes requested on "${ms.title}": ${note}`, gig._id);
   return { gig: updated };
 }
@@ -115,7 +115,7 @@ export async function settleMilestone({ gig, ms, fromStatus, toStatus, toFreelan
     },
     { new: true, session },
   );
-  if (!updated) throw conflict('This milestone was already settled', 'ALREADY_SETTLED');
+  if (!updated) throw conflict('This has already been paid out', 'ALREADY_SETTLED');
 
   const entries = [];
   if (toFreelancer > 0) {
@@ -125,7 +125,7 @@ export async function settleMilestone({ gig, ms, fromStatus, toStatus, toFreelan
   const refunds = [];
   if (toClient > 0) {
     const payment = await Payment.findOne({ _id: gig.payment, status: 'paid' }).session(session);
-    if (!payment) throw conflict('No captured payment found to refund for this gig', 'NO_PAYMENT');
+    if (!payment) throw conflict('No completed payment was found to refund for this gig', 'NO_PAYMENT');
     const [refund] = await Refund.create(
       [
         {
@@ -174,13 +174,13 @@ export async function approveMilestone(gigId, mid, user) {
       alreadyDone = true; // double click on "Approve": money already released once
       return;
     }
-    assertMilestoneTransition(ms.status, M.RELEASED, 'approve and release payment');
+    assertMilestoneTransition(ms.status, M.RELEASED, 'approve and pay');
     if (ms.status !== M.SUBMITTED) throw conflict('Work must be submitted before it can be approved', 'INVALID_STATE');
     ({ gig } = await settleMilestone({ gig, ms, fromStatus: M.SUBMITTED, toStatus: M.RELEASED, toFreelancer: ms.amount, session }));
   });
 
   if (!alreadyDone) {
-    notify(gig.freelancer, 'payment_released', `₹${ms.amount} released to your earnings for "${ms.title}"`, gig._id);
+    notify(gig.freelancer, 'payment_released', `You've been paid ₹${ms.amount} for "${ms.title}"`, gig._id);
     if (gig.status === GIG_STATUS.COMPLETED) {
       notify(gig.freelancer, 'gig_completed', `"${gig.title}" is complete. Leave a review for the client.`, gig._id);
       notify(gig.client, 'gig_completed', `"${gig.title}" is complete. Leave a review for the freelancer.`, gig._id);

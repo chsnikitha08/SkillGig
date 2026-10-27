@@ -5,7 +5,7 @@ import { useAction } from '../hooks/useAction';
 import StatusBadge from './StatusBadge';
 import { money } from '../utils/format';
 
-/** One row per milestone, with the actions the current user is allowed to take. */
+/** One row per stage (milestone), with the actions the current user is allowed to take. */
 export default function MilestoneList({ gig, role, isClient, isFreelancer, disputes, onChanged }) {
   return (
     <ol className="space-y-3">
@@ -62,10 +62,10 @@ function Milestone({ m, index, gig, isClient, isFreelancer, dispute, onChanged }
     },
     dispute: {
       title: 'Raise a dispute',
-      placeholder: 'Explain what went wrong (at least 20 characters). An admin will review both sides and the chat.',
+      placeholder: 'Explain what went wrong (at least 20 characters). The SkillGig team will review both sides and the chat.',
       button: 'Raise dispute',
       call: () => http.post(`${base}/dispute`, { reason: text }),
-      msg: 'Dispute raised. An admin will review it.',
+      msg: 'Dispute raised. The SkillGig team will review it.',
     },
   };
   const form = mode && forms[mode];
@@ -99,12 +99,14 @@ function Milestone({ m, index, gig, isClient, isFreelancer, dispute, onChanged }
       )}
       {['released', 'refunded', 'split'].includes(m.status) && (
         <p className="mt-2 text-sm text-gray-600">
-          {money(m.releasedAmount)} paid to freelancer{m.refundedAmount > 0 && `, ${money(m.refundedAmount)} refunded to client`}
+          {m.releasedAmount > 0 && `${money(m.releasedAmount)} paid to the freelancer`}
+          {m.releasedAmount > 0 && m.refundedAmount > 0 && ' · '}
+          {m.refundedAmount > 0 && `${money(m.refundedAmount)} refunded to the client`}
         </p>
       )}
       {m.status === 'disputed' && dispute && (
         <p className="mt-2 text-sm">
-          Under review by an admin. <Link className="link" to={`/disputes/${dispute._id}`}>View dispute</Link>
+          The SkillGig team is reviewing this. <Link className="link" to={`/disputes/${dispute._id}`}>View dispute</Link>
         </p>
       )}
 
@@ -122,11 +124,11 @@ function Milestone({ m, index, gig, isClient, isFreelancer, dispute, onChanged }
                 className="btn-success"
                 disabled={pending}
                 onClick={() =>
-                  window.confirm(`Release ${money(m.amount)} to the freelancer? This cannot be undone.`) &&
-                  act(() => http.post(`${base}/approve`), `${money(m.amount)} released to the freelancer`)
+                  window.confirm(`Approve this work and pay ${money(m.amount)} to the freelancer? This cannot be undone.`) &&
+                  act(() => http.post(`${base}/approve`), `Approved. ${money(m.amount)} paid to the freelancer.`)
                 }
               >
-                {pending ? 'Releasing…' : `Approve & release ${money(m.amount)}`}
+                {pending ? 'Paying…' : `Approve & pay ${money(m.amount)}`}
               </button>
               <button type="button" className="btn-secondary" disabled={m.revisionCount >= 3} onClick={() => setMode('revision')}>
                 Request changes
@@ -140,7 +142,7 @@ function Milestone({ m, index, gig, isClient, isFreelancer, dispute, onChanged }
           )}
           {isClient && m.status === 'funded' && deadlinePassed && (
             <button type="button" className="btn-secondary text-red-700" onClick={() => setMode('dispute')}>
-              Not delivered? Raise dispute
+              Not delivered? Report a problem
             </button>
           )}
           {isFreelancer && m.status === 'submitted' && <span className="self-center text-sm text-gray-500">Waiting for the client to review.</span>}

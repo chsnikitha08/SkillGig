@@ -22,7 +22,7 @@ export default function GigCard({ gig }) {
           {gig.client?.name} · {rating(gig.client)}
         </span>
         <span className="flex items-center gap-2">
-          {gig.milestones.length > 1 && <span>{gig.milestones.length} milestones</span>}
+          {gig.milestones.length > 1 && <span>{gig.milestones.length} stages</span>}
           <span>{gig.applicationCount} applied</span>
           <span>{timeLeft(gig.deadline)}</span>
           {gig.status !== 'open' && <StatusBadge status={gig.status} />}

@@ -32,9 +32,9 @@ const ORDER_REUSE_MS = 30 * 60 * 1000;
 export async function createFundingOrder(gigId, user) {
   const gig = await findGigOr404(gigId);
   assertClientOwner(gig, user);
-  if (gig.status === GIG_STATUS.OPEN) throw conflict('Accept a freelancer before funding escrow', 'NO_FREELANCER');
+  if (gig.status === GIG_STATUS.OPEN) throw conflict('Hire a freelancer before paying', 'NO_FREELANCER');
   if (gig.status !== GIG_STATUS.ACCEPTED) {
-    throw conflict(`Cannot fund escrow: this gig is ${gig.status.replace('_', ' ')}`, 'INVALID_STATE');
+    throw conflict(gig.status === GIG_STATUS.IN_PROGRESS ? 'This gig is already paid for' : `This gig can't be paid for because it is ${gig.status.replace('_', ' ')}`, 'INVALID_STATE');
   }
 
   const gateway = getGateway();
@@ -71,7 +71,7 @@ async function fetchVerifiedPayment(payment, razorpayPaymentId) {
   let rp = await gateway.fetchPayment(razorpayPaymentId);
   if (rp.order_id !== payment.orderId) throw badRequest('Payment does not belong to this order', 'PAYMENT_MISMATCH');
   if (rp.amount !== payment.amount * PAISE || rp.currency !== 'INR') {
-    throw badRequest('Paid amount does not match the escrow amount', 'PAYMENT_MISMATCH');
+    throw badRequest('The paid amount does not match the gig price', 'PAYMENT_MISMATCH');
   }
   if (rp.status === 'authorized') rp = await gateway.capture(rp.id, rp.amount);
   if (rp.status !== 'captured') throw conflict(`Payment is ${rp.status}, not completed`, 'PAYMENT_NOT_CAPTURED');
@@ -87,7 +87,7 @@ export async function verifyCheckout(gigId, user, { orderId, paymentId, signatur
   }
   await fetchVerifiedPayment(payment, paymentId);
   const result = await confirmFunding(payment._id, paymentId);
-  if (result.refunded) throw conflict('This gig could no longer be funded, so your payment is being refunded in full', 'PAYMENT_REFUNDED');
+  if (result.refunded) throw conflict('This gig is no longer available, so your payment is being refunded in full', 'PAYMENT_REFUNDED');
   return result;
 }
 
@@ -211,13 +211,13 @@ export async function confirmFunding(paymentDocId, razorpayPaymentId) {
 
   if (surplusRefund) {
     await processRefund(surplusRefund._id);
-    notify(payment.client, 'payment_refunded', `Your payment of ₹${payment.amount} for "${gig.title}" was refunded because the gig could not be funded.`, gig._id);
+    notify(payment.client, 'payment_refunded', `Your payment of ₹${payment.amount} for "${gig.title}" was refunded because the gig is no longer available.`, gig._id);
     return { gig, alreadyDone: false, refunded: true };
   }
   if (!alreadyDone) {
     gigChanged(gig._id);
-    notify(gig.freelancer, 'gig_funded', `Funds secured: ₹${gig.agreedAmount} is in escrow for "${gig.title}". You can start working.`, gig._id);
-    notify(gig.client, 'payment_received', `Payment of ₹${payment.amount} received. It is held in escrow for "${gig.title}".`, gig._id);
+    notify(gig.freelancer, 'gig_funded', `Payment secured for "${gig.title}". You can start working; you'll be paid as each part is approved.`, gig._id);
+    notify(gig.client, 'payment_received', `Payment of ₹${payment.amount} for "${gig.title}" was successful. It's held safely until you approve the work.`, gig._id);
   }
   return { gig, alreadyDone };
 }

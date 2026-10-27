@@ -96,7 +96,7 @@ function GigRow({ gig, role }) {
         <p className="font-medium">{gig.title}</p>
         <p className="text-xs text-gray-500">
           {other ? `${role === 'client' ? 'Freelancer' : 'Client'}: ${other} · ` : `${gig.applicationCount} applicants · `}
-          {done}/{gig.milestones.length} milestones settled · due {date(gig.deadline)}
+          {gig.milestones.length > 1 ? `${done}/${gig.milestones.length} stages done · ` : ''}due {date(gig.deadline)}
         </p>
       </div>
       <div className="flex items-center gap-3 text-sm">

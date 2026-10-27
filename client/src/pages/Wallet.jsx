@@ -7,11 +7,11 @@ import { dateTime, money } from '../utils/format';
 
 const TYPE = {
   client: {
-    fund: ['Paid into escrow (Razorpay)', 'text-gray-900', '−'],
+    fund: ['Payment for project', 'text-gray-900', '−'],
     refund: ['Refund to your payment method', 'text-emerald-700', '+'],
   },
   freelancer: {
-    release: ['Payment released to you', 'text-emerald-700', '+'],
+    release: ['Payment received', 'text-emerald-700', '+'],
   },
 };
 
@@ -32,14 +32,14 @@ export default function Wallet() {
 
   const tiles = isClient
     ? [
-        ['Paid via Razorpay', summary.data?.paid],
-        ['Held in escrow', summary.data?.inEscrow],
+        ['Total paid', summary.data?.paid],
+        ['On hold for active projects', summary.data?.inEscrow],
         ['Refunded', summary.data?.refunded],
-        ['Refunds in progress', summary.data?.pendingRefunds],
+        ['Refunds processing', summary.data?.pendingRefunds],
       ]
     : [
         ['Earnings', summary.data?.earnings],
-        ['Coming to you (in escrow)', summary.data?.inEscrow],
+        ['Secured for active projects', summary.data?.inEscrow],
       ];
 
   return (
@@ -56,8 +56,8 @@ export default function Wallet() {
       </div>
       <p className="text-xs text-gray-500">
         {isClient
-          ? 'Escrow is paid through Razorpay (test mode). Refunds from cancelled gigs and dispute decisions go back to the original payment method.'
-          : 'Released payments are recorded here. Bank payouts are not enabled yet (they require a RazorpayX business account).'}
+          ? 'Payments are processed securely by Razorpay and held by SkillGig until you approve the work. Refunds go back to your original payment method.'
+          : 'Money is secured before you start and paid out as each stage is approved.'}
       </p>
 
       <section>
@@ -67,7 +67,7 @@ export default function Wallet() {
           <Spinner />
         ) : !txs.data?.items.length ? (
           <EmptyState title="Nothing here yet">
-            {isClient ? 'Hire a freelancer and pay into escrow to get started.' : 'Payments appear here when clients approve your work.'}
+            {isClient ? 'Your payments will appear here once you hire someone.' : 'Payments appear here when clients approve your work.'}
           </EmptyState>
         ) : (
           <div className="card overflow-x-auto p-0">
@@ -94,8 +94,8 @@ export default function Wallet() {
                             {t.refund.lastError && ` · ${t.refund.lastError}`}
                           </span>
                         )}
-                        {t.type === 'fund' && <span className="block text-xs text-gray-400">{t.note}</span>}
-                        {t.refund?.razorpayRefundId && <span className="block text-xs text-gray-400">{t.refund.razorpayRefundId}</span>}
+                        
+                        
                       </td>
                       <td className="px-4 py-2">{t.gig ? <Link className="link" to={`/gigs/${t.gig._id}`}>{t.gig.title}</Link> : '—'}</td>
                       <td className={`px-4 py-2 text-right font-medium ${cls}`}>

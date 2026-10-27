@@ -20,7 +20,7 @@ export function loadCheckout() {
 }
 
 /**
- * Full escrow funding flow. Resolves with the server's response once the payment
+ * Full payment flow for a gig. Resolves with the server's response once the payment
  * is verified, or with { cancelled: true } if the user closed the checkout.
  *  1. server creates the order (amount decided server-side)
  *  2. Razorpay Checkout collects the payment
@@ -38,7 +38,7 @@ export async function payForGig(gigId) {
       amount: order.amount,
       currency: order.currency,
       name: 'SkillGig',
-      description: `Escrow for "${order.gig.title}"`,
+      description: `Secure payment for "${order.gig.title}"`,
       prefill: order.prefill,
       theme: { color: '#4f46e5' },
       handler: (resp) =>

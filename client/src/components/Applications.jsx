@@ -17,7 +17,7 @@ export default function Applications({ gig, onChanged }) {
 
   const accept = async (a) => {
     if (!window.confirm(`Hire ${a.freelancer.name} for ${money(a.quotedPrice)}? All other applicants will be declined.`)) return;
-    const ok = await run(() => http.post(`/applications/${a._id}/accept`), `${a.freelancer.name} hired. Fund escrow to let them start.`);
+    const ok = await run(() => http.post(`/applications/${a._id}/accept`), `${a.freelancer.name} hired. Complete the payment so they can start.`);
     if (ok) onChanged();
   };
 

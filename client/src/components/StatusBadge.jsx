@@ -16,7 +16,23 @@ const STYLES = {
   resolved: 'bg-emerald-100 text-emerald-800',
 };
 
-const LABELS = { in_progress: 'in progress', funded: 'funded · in escrow', accepted: 'awaiting funding' };
+const LABELS = {
+  open: 'Open',
+  accepted: 'Awaiting payment',
+  in_progress: 'In progress',
+  completed: 'Completed',
+  cancelled: 'Cancelled',
+  pending: 'Not started',
+  funded: 'In progress',
+  submitted: 'Awaiting review',
+  disputed: 'Under review',
+  released: 'Paid',
+  refunded: 'Refunded',
+  split: 'Settled',
+  rejected: 'Not selected',
+  withdrawn: 'Withdrawn',
+  resolved: 'Resolved',
+};
 
 export default function StatusBadge({ status }) {
   return (

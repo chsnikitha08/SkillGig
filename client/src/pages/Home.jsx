@@ -2,11 +2,11 @@ import { Link, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 const STEPS = [
-  ['Post', 'A client posts a gig with a budget, deadline and optional milestones.'],
-  ['Hire', 'Freelancers apply with a pitch and a quote. The client accepts one.'],
-  ['Fund escrow', 'The client pays via Razorpay; the money is held in escrow. The freelancer sees “Funds secured”.'],
-  ['Deliver', 'The freelancer submits each milestone. The client approves or asks for changes.'],
-  ['Get paid', 'Approval releases that milestone’s money. Disputes go to an admin.'],
+  ['Post a gig', 'Describe the work, set a budget and deadline, and split it into stages if you like.'],
+  ['Hire', 'Students apply with a pitch and a price. Compare ratings and pick the best fit.'],
+  ['Pay securely', 'Pay through Razorpay. SkillGig holds the money safely, so the freelancer knows it’s there.'],
+  ['Review the work', 'Approve each stage when you’re happy, or ask for changes.'],
+  ['Everyone’s protected', 'Freelancers get paid on approval. If something goes wrong, our team steps in.'],
 ];
 
 export default function Home() {
@@ -17,8 +17,8 @@ export default function Home() {
     <div className="mx-auto max-w-3xl py-10">
       <h1 className="text-4xl font-bold text-gray-900">Freelancing for students, where nobody gets cheated.</h1>
       <p className="mt-4 text-lg text-gray-600">
-        SkillGig holds the client’s money in escrow until the work is approved. Freelancers know the money exists before they
-        start; clients only pay for work they accept. If something goes wrong, an admin decides.
+        Hire talented students for logos, notes, websites and videos. Your payment is held safely until you approve the work,
+        so freelancers know they’ll be paid and clients only pay for work they’re happy with.
       </p>
       <div className="mt-6 flex gap-3">
         <Link to="/register" className="btn-primary">

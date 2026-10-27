@@ -103,7 +103,7 @@ export async function cancelGig(req, res) {
     gig = await findGigOr404(id, { session });
     assertClientOwner(gig, req.user);
     if (gig.status === GIG_STATUS.IN_PROGRESS) {
-      assertGigTransition(gig.status, GIG_STATUS.CANCELLED, 'cancel after funding; raise a dispute instead');
+      assertGigTransition(gig.status, GIG_STATUS.CANCELLED, 'cancel after payment; raise a dispute instead');
     }
     assertGigTransition(gig.status, GIG_STATUS.CANCELLED, 'cancel');
 

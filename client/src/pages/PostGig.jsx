@@ -24,7 +24,7 @@ export default function PostGig() {
   const submit = async (e) => {
     e.preventDefault();
     if (useMilestones && msTotal !== budget) {
-      setError(`Milestones add up to ${money(msTotal)} but the budget is ${money(budget)}`);
+      setError(`Stages add up to ${money(msTotal)} but the budget is ${money(budget)}`);
       return;
     }
     setPending(true);
@@ -73,14 +73,14 @@ export default function PostGig() {
 
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" checked={useMilestones} onChange={(e) => setUseMilestones(e.target.checked)} />
-          Split into milestones (each one is approved and paid separately)
+          Pay in stages (approve and pay for each part separately)
         </label>
         {useMilestones && (
           <div className="space-y-2 rounded-md bg-gray-50 p-3">
             {milestones.map((m, i) => (
               // eslint-disable-next-line react/no-array-index-key
               <div key={i} className="flex gap-2">
-                <input className="input" required placeholder={`Milestone ${i + 1} title`} value={m.title} onChange={(e) => updateMs(i, 'title', e.target.value)} />
+                <input className="input" required placeholder={`Stage ${i + 1}, e.g. First draft`} value={m.title} onChange={(e) => updateMs(i, 'title', e.target.value)} />
                 <input className="input w-32" required type="number" min="1" placeholder="₹" value={m.amount} onChange={(e) => updateMs(i, 'amount', e.target.value)} />
                 <button type="button" className="btn-secondary" disabled={milestones.length === 1} onClick={() => setMilestones(milestones.filter((_, j) => j !== i))}>
                   ✕
@@ -89,7 +89,7 @@ export default function PostGig() {
             ))}
             <div className="flex items-center justify-between text-sm">
               <button type="button" className="link" disabled={milestones.length >= 10} onClick={() => setMilestones([...milestones, { title: '', amount: '' }])}>
-                + Add milestone
+                + Add stage
               </button>
               <span className={msTotal === budget ? 'text-emerald-700' : 'text-red-600'}>
                 Total {money(msTotal)} / budget {money(budget)}

@@ -47,7 +47,22 @@ export const MILESTONE_TRANSITIONS = {
 
 export const TERMINAL_MILESTONE = new Set([M.RELEASED, M.REFUNDED, M.SPLIT]);
 
-const label = (s) => s.replace('_', ' ');
+// How each status is described to users in error messages.
+const LABELS = {
+  open: 'still open',
+  accepted: 'waiting for payment',
+  in_progress: 'in progress',
+  completed: 'already completed',
+  cancelled: 'cancelled',
+  pending: 'not started yet',
+  funded: 'still in progress',
+  submitted: 'waiting for review',
+  disputed: 'under review by the SkillGig team',
+  released: 'already paid',
+  refunded: 'already refunded',
+  split: 'already settled',
+};
+const label = (s) => LABELS[s] ?? s.replace('_', ' ');
 
 export const canGigTransition = (from, to) => GIG_TRANSITIONS[from]?.includes(to) ?? false;
 export const canMilestoneTransition = (from, to) => MILESTONE_TRANSITIONS[from]?.includes(to) ?? false;
@@ -60,7 +75,7 @@ export function assertGigTransition(from, to, action) {
 
 export function assertMilestoneTransition(from, to, action) {
   if (!canMilestoneTransition(from, to)) {
-    throw conflict(`Cannot ${action}: this milestone is ${label(from)}`, 'INVALID_STATE');
+    throw conflict(`Cannot ${action}: this stage is ${label(from)}`, 'INVALID_STATE');
   }
 }
 

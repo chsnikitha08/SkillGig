@@ -15,7 +15,7 @@ export async function apply(req, res) {
   if (gig.status !== GIG_STATUS.OPEN) throw conflict('This gig is no longer accepting applications', 'GIG_CLOSED');
   if (gig.deadline <= new Date()) throw conflict('The deadline for this gig has passed', 'GIG_EXPIRED');
   if (quotedPrice < gig.milestones.length) {
-    throw badRequest(`Quote must be at least ${gig.milestones.length} (1 credit per milestone)`);
+    throw badRequest(`Your price must be at least ₹${gig.milestones.length}`);
   }
 
   let application;
@@ -96,7 +96,7 @@ export async function accept(req, res) {
   });
 
   gigChanged(gig._id);
-  notify(application.freelancer, 'application_accepted', `You were hired for "${gig.title}". Wait for the client to fund escrow.`, gig._id);
+  notify(application.freelancer, 'application_accepted', `You were hired for "${gig.title}". You can start once the client completes the payment.`, gig._id);
   rejected.forEach((a) => notify(a.freelancer, 'application_rejected', `Another freelancer was chosen for "${gig.title}"`, gig._id));
   res.json({ gig, application });
 }

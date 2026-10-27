@@ -66,7 +66,7 @@ function AdminStats() {
     ['Users', Object.values(data.users).reduce((a, b) => a + b, 0)],
     ['Active gigs', (data.gigs.in_progress ?? 0) + (data.gigs.accepted ?? 0)],
     ['Open disputes', data.openDisputes],
-    ['Held in escrow', money(ledger.inEscrow)],
+    ['Payments on hold', money(ledger.inEscrow)],
   ];
   const retry = async (id) => {
     const res = await run(() => http.post(`/admin/refunds/${id}/retry`));
@@ -83,12 +83,12 @@ function AdminStats() {
         ))}
       </div>
       <p className={`rounded-md px-3 py-2 text-sm ${ledger.balanced ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
-        Ledger check: {money(ledger.paidIn)} paid in via Razorpay = {money(ledger.inEscrow)} in escrow + {money(ledger.released)} released to
-        freelancers + {money(ledger.refunded)} refunded {ledger.balanced ? '✓ balanced' : '✗ MISMATCH, investigate'}
+        {ledger.balanced ? '✓ All payments accounted for' : '✗ Payment records do not add up. Investigate.'} · {money(ledger.paidIn)} received ={' '}
+        {money(ledger.inEscrow)} on hold + {money(ledger.released)} paid to freelancers + {money(ledger.refunded)} refunded
       </p>
       {data.failedRefunds.length > 0 && (
         <div className="card border-red-200">
-          <p className="mb-2 text-sm font-semibold text-red-700">Failed Razorpay refunds (retried automatically every 5 minutes)</p>
+          <p className="mb-2 text-sm font-semibold text-red-700">Refunds that need attention (retried automatically every 5 minutes)</p>
           {data.failedRefunds.map((r) => (
             <div key={r._id} className="flex items-center justify-between gap-2 py-1 text-sm">
               <span>
