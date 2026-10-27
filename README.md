@@ -9,7 +9,7 @@ Clients post paid gigs (a logo, a website, a video edit, notes, a pitch deck) an
 | **Live app** | https://skill-gig.vercel.app |
 | **API** | https://skillgig-api.onrender.com ([health check](https://skillgig-api.onrender.com/api/health)) |
 | **Repository** | https://github.com/chsnikitha08/SkillGig |
-| **Demo video** | _add link here_ |
+| **Demo video** | https://drive.google.com/drive/folders/183TRPDCEJE4Pf_IvmjqJsK0HLVO3UZAz |
 | **Admin login** | Shared privately in the submission form |
 
 > The API runs on Render's free tier, which sleeps when idle. The first request after a quiet period can take about 30 seconds; after that it responds in about a second.
