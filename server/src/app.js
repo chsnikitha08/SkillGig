@@ -3,6 +3,7 @@ import helmet from 'helmet';
 import cors from 'cors';
 import morgan from 'morgan';
 import { env } from './config/env.js';
+import authRoutes from './routes/auth.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 export function createApp() {
@@ -15,6 +16,8 @@ export function createApp() {
   if (!env.isTest) app.use(morgan(env.isProd ? 'combined' : 'dev'));
 
   app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
+
+  app.use('/api/auth', authRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);
