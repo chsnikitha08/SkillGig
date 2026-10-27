@@ -9,7 +9,7 @@ export default function Footer() {
         <div>
           <Logo light />
           <p className="mt-4 text-sm leading-relaxed text-gray-400">
-            The student marketplace where payments are protected until the work is approved.
+            The freelance marketplace where payments are protected until the work is approved.
           </p>
         </div>
         <div>

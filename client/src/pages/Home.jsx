@@ -40,8 +40,8 @@ const SLIDES = [
     key: 'hire',
     tab: 'Hire talent',
     image: '/hero.jpg',
-    title: 'Hire talented students for any task, online.',
-    text: 'Logos, notes, websites, videos and more, from students on your campus. Your payment stays protected until you approve the work.',
+    title: 'Hire skilled freelancers for any task, online.',
+    text: 'Logos, websites, videos, writing and more, from talented freelancers. Your payment stays protected until you approve the work.',
     placeholder: 'What do you need done?',
     button: 'Search',
   },
@@ -50,7 +50,7 @@ const SLIDES = [
     tab: 'Find work',
     image: '/hero-work.jpg',
     title: 'Get paid for what you’re great at.',
-    text: 'Pick up gigs from students around you. The payment is secured before you start, so you’ll never chase anyone for money again.',
+    text: 'Pick up gigs that match your skills. The payment is secured before you start, so you’ll never chase anyone for money again.',
     placeholder: 'What can you do? Try “logo” or “react”',
     button: 'Find work',
   },
@@ -242,7 +242,7 @@ function Categories() {
 
   return (
     <section className="container-page py-20">
-      <SectionHeader title="Browse talent by category" subtitle="Find the right student for whatever you need" link="/gigs" linkLabel="All gigs" />
+      <SectionHeader title="Browse talent by category" subtitle="Find the right freelancer for whatever you need" link="/gigs" linkLabel="All gigs" />
       <div className="grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
         {CATEGORIES.map((c) => {
           const Icon = c.icon;
@@ -269,7 +269,7 @@ function FreshGigs() {
   return (
     <section className="bg-brand-50/60 py-20">
       <div className="container-page">
-        <SectionHeader title="Fresh gigs" subtitle="The latest work posted by students" link="/gigs" linkLabel="All gigs" />
+        <SectionHeader title="Fresh gigs" subtitle="The latest work posted on SkillGig" link="/gigs" linkLabel="All gigs" />
         {loading ? (
           <Spinner />
         ) : data?.items?.length ? (
@@ -295,7 +295,7 @@ function FreshGigs() {
 function Trust() {
   return (
     <section className="container-page py-20">
-      <SectionHeader title="Why students trust SkillGig" subtitle="Built so nobody gets cheated, on either side" />
+      <SectionHeader title="Why people trust SkillGig" subtitle="Built so nobody gets cheated, on either side" />
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {TRUST.map(([Icon, title, text]) => (
           <div key={title} className="card">
@@ -316,7 +316,7 @@ function CallToAction() {
       <div className="grid overflow-hidden rounded-2xl bg-[#1f2b24] text-white md:grid-cols-2">
         <div className="p-10 sm:p-12">
           <h2 className="text-3xl font-bold">Need something done?</h2>
-          <p className="mt-3 text-white/75">Post a gig in two minutes and get applications from skilled students today.</p>
+          <p className="mt-3 text-white/75">Post a gig in two minutes and get applications from skilled freelancers today.</p>
           <Link to={user?.role === 'freelancer' ? '/gigs' : user ? '/gigs/new' : '/register'} className="btn-primary mt-6">
             {user?.role === 'freelancer' ? 'Find work' : 'Post a gig'} <ArrowRight className="h-4 w-4" />
           </Link>

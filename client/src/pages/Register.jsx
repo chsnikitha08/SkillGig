@@ -31,7 +31,7 @@ export default function Register() {
   };
 
   return (
-    <AuthLayout title="Create your account" subtitle="Join SkillGig to hire students or start earning from your skills.">
+    <AuthLayout title="Create your account" subtitle="Join SkillGig to hire talent or start earning from your skills.">
       <form onSubmit={submit} className="space-y-5">
         <ErrorBanner message={error} />
         <div>
