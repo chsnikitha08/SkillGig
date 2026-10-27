@@ -1,15 +1,14 @@
 import mongoose from 'mongoose';
 
-export const TX_TYPES = ['topup', 'fund', 'release', 'refund'];
+export const TX_TYPES = ['fund', 'release', 'refund'];
 
 /**
- * Append-only money ledger. Every balance change writes exactly one entry, in the
- * same MongoDB transaction as the balance change itself.
+ * Append-only money ledger. Every escrow change writes exactly one entry, in the
+ * same MongoDB transaction as the change itself.
  *
- *   topup:   outside world -> user wallet        (fromUser = null)
- *   fund:    client wallet -> gig escrow         (toUser = null)
- *   release: gig escrow    -> freelancer wallet  (fromUser = null)
- *   refund:  gig escrow    -> client wallet      (fromUser = null)
+ *   fund:    client's Razorpay payment -> gig escrow   (toUser = null)
+ *   release: gig escrow -> freelancer earnings          (fromUser = null)
+ *   refund:  gig escrow -> client, via Razorpay refund  (fromUser = null)
  */
 const transactionSchema = new mongoose.Schema(
   {

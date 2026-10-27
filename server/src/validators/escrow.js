@@ -1,8 +1,4 @@
 import { z } from 'zod';
-import { credits } from './common.js';
-
-export const topUpSchema = z.object({ amount: credits });
-
 export const submitSchema = z.object({
   note: z.string().trim().min(5, 'must be at least 5 characters').max(2000),
   link: z

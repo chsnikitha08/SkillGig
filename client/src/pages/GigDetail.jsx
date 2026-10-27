@@ -11,6 +11,9 @@ import MilestoneList from '../components/MilestoneList';
 import StatusBadge from '../components/StatusBadge';
 import { ErrorBanner, Field, Spinner } from '../components/ui';
 import { date, money, rating, timeLeft } from '../utils/format';
+import { payForGig } from '../utils/razorpay';
+import { useToast } from '../context/ToastContext';
+import { errorMessage } from '../api/http';
 
 export default function GigDetail() {
   const { id } = useParams();
@@ -56,7 +59,7 @@ export default function GigDetail() {
           </div>
         </section>
 
-        <NextStep gig={gig} isClient={isClient} isFreelancer={isFreelancer} user={user} onChanged={changed} />
+        <NextStep gig={gig} isClient={isClient} isFreelancer={isFreelancer} onChanged={changed} />
 
         <section className="card">
           <h2 className="mb-3 font-semibold">Milestones</h2>
@@ -118,13 +121,32 @@ function Row({ label, value }) {
 }
 
 /** A banner that tells each party what happens next, with the action to take. */
-function NextStep({ gig, isClient, isFreelancer, user, onChanged }) {
+function NextStep({ gig, isClient, isFreelancer, onChanged }) {
   const { run, pending } = useAction();
+  const toast = useToast();
+  const [paying, setPaying] = useState(false);
 
-  const fund = async () => {
-    if (!window.confirm(`Lock ${money(gig.agreedAmount)} from your wallet into escrow?`)) return;
-    const res = await run(() => http.post(`/gigs/${gig._id}/fund`), 'Escrow funded. The freelancer can start working.');
-    if (res) onChanged();
+  const pay = async () => {
+    setPaying(true);
+    try {
+      const res = await payForGig(gig._id);
+      if (res.cancelled) toast('Payment cancelled. Nothing was charged.', 'error');
+      else if (res.gig?.status === 'in_progress') toast(`Payment verified. ${money(gig.agreedAmount)} is now held in escrow.`);
+      else toast('Payment not confirmed yet. Use "Check payment status" in a moment.', 'error');
+      onChanged();
+    } catch (err) {
+      toast(errorMessage(err), 'error');
+      onChanged();
+    } finally {
+      setPaying(false);
+    }
+  };
+  const sync = async () => {
+    const res = await run(() => http.post(`/gigs/${gig._id}/fund/sync`));
+    if (res) {
+      toast(res.data.gig?.status === 'in_progress' ? 'Payment found and verified.' : 'No completed payment found for this gig yet.', res.data.found === false ? 'error' : 'success');
+      onChanged();
+    }
   };
   const cancel = async () => {
     if (!window.confirm('Cancel this gig? Applicants will be notified.')) return;
@@ -137,28 +159,28 @@ function NextStep({ gig, isClient, isFreelancer, user, onChanged }) {
 
   if (gig.status === 'open' && isClient) body = 'Waiting for applications. Review applicants below and hire one.';
   if (gig.status === 'accepted' && isClient) {
-    const short = user.walletBalance < gig.agreedAmount;
     tone = 'bg-amber-50 border-amber-200 text-amber-900';
     body = (
       <>
         <p>
-          Fund escrow with <b>{money(gig.agreedAmount)}</b> so {gig.freelancer.name} can start. The money stays locked until you approve each
-          milestone.
+          Pay <b>{money(gig.agreedAmount)}</b> into escrow so {gig.freelancer.name} can start. SkillGig holds it and releases each milestone only
+          when you approve it.
         </p>
-        {short && (
-          <p className="mt-1 text-sm">
-            Your wallet has {money(user.walletBalance)}. <Link to="/wallet" className="link">Top up first</Link>.
-          </p>
-        )}
-        <button type="button" className="btn-primary mt-3" disabled={pending || short} onClick={fund}>
-          {pending ? 'Funding…' : `Fund escrow (${money(gig.agreedAmount)})`}
-        </button>
+        <p className="mt-1 text-xs">Secure checkout by Razorpay (test mode: use test card 4111 1111 1111 1111, any future expiry, any CVV).</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button type="button" className="btn-primary" disabled={paying || pending} onClick={pay}>
+            {paying ? 'Processing payment…' : `Pay ${money(gig.agreedAmount)} with Razorpay`}
+          </button>
+          <button type="button" className="link text-sm" disabled={pending || paying} onClick={sync}>
+            Already paid? Check payment status
+          </button>
+        </div>
       </>
     );
   }
   if (gig.status === 'accepted' && isFreelancer) {
     tone = 'bg-amber-50 border-amber-200 text-amber-900';
-    body = 'You were hired! Wait until the client funds escrow before starting work.';
+    body = 'You were hired! Wait until the client pays into escrow before starting work.';
   }
   if (gig.status === 'in_progress' && isFreelancer) {
     tone = 'bg-emerald-50 border-emerald-200 text-emerald-900';
@@ -172,7 +194,7 @@ function NextStep({ gig, isClient, isFreelancer, user, onChanged }) {
     tone = 'bg-emerald-50 border-emerald-200 text-emerald-900';
     body = 'This gig is complete and every milestone is settled.';
   }
-  if (gig.status === 'cancelled') body = 'This gig was cancelled before any money was moved.';
+  if (gig.status === 'cancelled') body = 'This gig was cancelled. Any payment made for it is refunded automatically.';
 
   const canCancel = isClient && ['open', 'accepted'].includes(gig.status);
   if (!body && !canCancel) return null;
@@ -180,7 +202,7 @@ function NextStep({ gig, isClient, isFreelancer, user, onChanged }) {
     <section className={`rounded-lg border p-4 ${tone}`}>
       {typeof body === 'string' ? <p>{body}</p> : body}
       {canCancel && (
-        <button type="button" className="btn-secondary mt-3" disabled={pending} onClick={cancel}>
+        <button type="button" className="btn-secondary mt-3" disabled={pending || paying} onClick={cancel}>
           Cancel gig
         </button>
       )}

@@ -1,76 +1,74 @@
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { http } from '../api/http';
 import { useAuth } from '../context/AuthContext';
-import { useAction } from '../hooks/useAction';
 import { useFetch } from '../hooks/useFetch';
 import { EmptyState, ErrorBanner, PageTitle, Spinner } from '../components/ui';
 import { dateTime, money } from '../utils/format';
 
 const TYPE = {
-  topup: ['Top-up', 'text-emerald-700'],
-  fund: ['Moved to escrow', 'text-red-700'],
-  release: ['Payment received', 'text-emerald-700'],
-  refund: ['Refund from escrow', 'text-emerald-700'],
+  client: {
+    fund: ['Paid into escrow (Razorpay)', 'text-gray-900', '−'],
+    refund: ['Refund to your payment method', 'text-emerald-700', '+'],
+  },
+  freelancer: {
+    release: ['Payment released to you', 'text-emerald-700', '+'],
+  },
 };
 
-export default function Wallet() {
-  const { user, refreshUser } = useAuth();
-  const [page, setPage] = useState(1);
-  const wallet = useFetch('/wallet');
-  const txs = useFetch(`/wallet/transactions?page=${page}`);
-  const { run, pending } = useAction();
-  const [amount, setAmount] = useState('1000');
-  // One key per intended top-up, so a double click or retry can't add money twice.
-  const idemKey = useRef(crypto.randomUUID());
+const REFUND_STATUS = {
+  processed: 'text-emerald-700',
+  pending: 'text-amber-700',
+  processing: 'text-amber-700',
+  failed: 'text-red-700',
+};
 
-  const topUp = async (e) => {
-    e.preventDefault();
-    const res = await run(
-      () => http.post('/wallet/topup', { amount: Number(amount) }, { headers: { 'Idempotency-Key': idemKey.current } }),
-      `${money(amount)} test credits added`,
-    );
-    if (res) {
-      idemKey.current = crypto.randomUUID();
-      refreshUser();
-      wallet.reload({ silent: true });
-      txs.reload({ silent: true });
-    }
-  };
+/** Clients see their Razorpay payments and refunds; freelancers see their earnings. */
+export default function Wallet() {
+  const { user } = useAuth();
+  const isClient = user.role === 'client';
+  const [page, setPage] = useState(1);
+  const summary = useFetch('/wallet');
+  const txs = useFetch(`/wallet/transactions?page=${page}`);
+
+  const tiles = isClient
+    ? [
+        ['Paid via Razorpay', summary.data?.paid],
+        ['Held in escrow', summary.data?.inEscrow],
+        ['Refunded', summary.data?.refunded],
+        ['Refunds in progress', summary.data?.pendingRefunds],
+      ]
+    : [
+        ['Earnings', summary.data?.earnings],
+        ['Coming to you (in escrow)', summary.data?.inEscrow],
+      ];
 
   return (
     <div className="space-y-6">
-      <PageTitle>Wallet</PageTitle>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="card">
-          <p className="text-sm text-gray-500">Available</p>
-          <p className="text-2xl font-semibold">{money(user.walletBalance)}</p>
-        </div>
-        <div className="card">
-          <p className="text-sm text-gray-500">{user.role === 'client' ? 'Locked in escrow' : 'Coming to you (in escrow)'}</p>
-          <p className="text-2xl font-semibold">{wallet.loading ? '…' : money(wallet.data?.inEscrow)}</p>
-        </div>
-        <form onSubmit={topUp} className="card">
-          <p className="mb-2 text-sm text-gray-500">Add test credits</p>
-          <div className="flex gap-2">
-            <input className="input" type="number" min="1" max="50000" required value={amount} onChange={(e) => setAmount(e.target.value)} />
-            <button className="btn-primary" disabled={pending}>
-              Add
-            </button>
+      <PageTitle>{isClient ? 'Payments' : 'Earnings'}</PageTitle>
+      <ErrorBanner message={summary.error} onRetry={summary.reload} />
+      <div className={`grid gap-4 ${isClient ? 'sm:grid-cols-4' : 'sm:grid-cols-2'}`}>
+        {tiles.map(([label, value]) => (
+          <div key={label} className="card">
+            <p className="text-sm text-gray-500">{label}</p>
+            <p className="text-2xl font-semibold">{summary.loading ? '…' : money(value)}</p>
           </div>
-        </form>
+        ))}
       </div>
       <p className="text-xs text-gray-500">
-        SkillGig uses simulated test credits. No real money is involved; escrow holds and releases are recorded in the app’s own ledger.
+        {isClient
+          ? 'Escrow is paid through Razorpay (test mode). Refunds from cancelled gigs and dispute decisions go back to the original payment method.'
+          : 'Released payments are recorded here. Bank payouts are not part of this demo (they require a RazorpayX business account).'}
       </p>
 
       <section>
-        <h2 className="mb-2 font-semibold">Ledger</h2>
+        <h2 className="mb-2 font-semibold">History</h2>
         <ErrorBanner message={txs.error} onRetry={txs.reload} />
         {txs.loading ? (
           <Spinner />
         ) : !txs.data?.items.length ? (
-          <EmptyState title="No transactions yet">Top up your wallet to get started.</EmptyState>
+          <EmptyState title="Nothing here yet">
+            {isClient ? 'Hire a freelancer and pay into escrow to get started.' : 'Payments appear here when clients approve your work.'}
+          </EmptyState>
         ) : (
           <div className="card overflow-x-auto p-0">
             <table className="w-full text-sm">
@@ -84,15 +82,24 @@ export default function Wallet() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {txs.data.items.map((t) => {
-                  const [label, cls] = TYPE[t.type];
-                  const outgoing = t.fromUser === user._id;
+                  const [label, cls, sign] = TYPE[user.role]?.[t.type] ?? [t.type, '', ''];
                   return (
                     <tr key={t._id}>
                       <td className="px-4 py-2 text-gray-500">{dateTime(t.createdAt)}</td>
-                      <td className="px-4 py-2">{label}</td>
+                      <td className="px-4 py-2">
+                        {label}
+                        {t.refund && (
+                          <span className={`ml-2 text-xs font-medium ${REFUND_STATUS[t.refund.status]}`}>
+                            {t.refund.status}
+                            {t.refund.lastError && ` · ${t.refund.lastError}`}
+                          </span>
+                        )}
+                        {t.type === 'fund' && <span className="block text-xs text-gray-400">{t.note}</span>}
+                        {t.refund?.razorpayRefundId && <span className="block text-xs text-gray-400">{t.refund.razorpayRefundId}</span>}
+                      </td>
                       <td className="px-4 py-2">{t.gig ? <Link className="link" to={`/gigs/${t.gig._id}`}>{t.gig.title}</Link> : '—'}</td>
                       <td className={`px-4 py-2 text-right font-medium ${cls}`}>
-                        {outgoing ? '−' : '+'}
+                        {sign}
                         {money(t.amount)}
                       </td>
                     </tr>

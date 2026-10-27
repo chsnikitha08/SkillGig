@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 const STEPS = [
   ['Post', 'A client posts a gig with a budget, deadline and optional milestones.'],
   ['Hire', 'Freelancers apply with a pitch and a quote. The client accepts one.'],
-  ['Fund escrow', 'The client locks the money in escrow. The freelancer sees “Funds secured”.'],
+  ['Fund escrow', 'The client pays via Razorpay; the money is held in escrow. The freelancer sees “Funds secured”.'],
   ['Deliver', 'The freelancer submits each milestone. The client approves or asks for changes.'],
   ['Get paid', 'Approval releases that milestone’s money. Disputes go to an admin.'],
 ];

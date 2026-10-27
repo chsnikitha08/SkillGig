@@ -6,6 +6,7 @@ import { findGigOr404, isClientOf, isParticipant } from './gigAccess.js';
 import { findMilestone, settleMilestone } from './escrowService.js';
 import { GIG_STATUS, MILESTONE_STATUS as M, assertMilestoneTransition } from './stateMachine.js';
 import { notify, notifyAdmins } from './notificationService.js';
+import { processRefund } from './paymentService.js';
 
 const DECISION_TO_STATUS = { release: M.RELEASED, refund: M.REFUNDED, split: M.SPLIT };
 
@@ -80,6 +81,7 @@ export async function respondToDispute(disputeId, user, response) {
 export async function resolveDispute(disputeId, admin, { decision, freelancerAmount, note }) {
   let dispute;
   let gig;
+  let refunds = [];
   await mongoose.connection.transaction(async (session) => {
     dispute = await Dispute.findById(disputeId).session(session);
     if (!dispute) throw notFound('Dispute not found');
@@ -114,7 +116,7 @@ export async function resolveDispute(disputeId, admin, { decision, freelancerAmo
     if (!closed) throw conflict('This dispute is already resolved', 'ALREADY_RESOLVED');
     dispute = closed;
 
-    gig = await settleMilestone({
+    ({ gig, refunds } = await settleMilestone({
       gig,
       ms,
       fromStatus: M.DISPUTED,
@@ -122,11 +124,15 @@ export async function resolveDispute(disputeId, admin, { decision, freelancerAmo
       toFreelancer,
       session,
       note: `Dispute decision (${decision}) for "${ms.title}"`,
-    });
+    }));
   });
 
-  const msg = `Dispute on "${dispute.milestoneTitle}" resolved: ₹${dispute.freelancerAmount} to freelancer, ₹${dispute.clientAmount} refunded to client.`;
+  // The decision is committed; now send any refund to Razorpay. A failure here is
+  // recorded on the refund and retried by the background worker.
+  const processed = await Promise.all(refunds.map((r) => processRefund(r._id)));
+
+  const msg = `Dispute on "${dispute.milestoneTitle}" resolved: ₹${dispute.freelancerAmount} to freelancer, ₹${dispute.clientAmount} refunded to the client's original payment method.`;
   notify(gig.client, 'dispute_resolved', msg, gig._id);
   notify(gig.freelancer, 'dispute_resolved', msg, gig._id);
-  return { dispute, gig };
+  return { dispute, gig, refunds: processed };
 }

@@ -32,7 +32,9 @@ const gigSchema = new mongoose.Schema(
     client: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
     freelancer: { type: mongoose.Schema.Types.ObjectId, ref: 'User', index: true },
     milestones: { type: [milestoneSchema], validate: (v) => v.length >= 1 && v.length <= 10 },
-    // Credits currently locked in escrow for this gig.
+    // The verified Razorpay payment that funded escrow (refunds are issued against it).
+    payment: { type: mongoose.Schema.Types.ObjectId, ref: 'Payment' },
+    // Rupees currently locked in escrow for this gig.
     escrowHeld: { type: Number, default: 0, min: 0 },
     applicationCount: { type: Number, default: 0 },
     acceptedAt: Date,

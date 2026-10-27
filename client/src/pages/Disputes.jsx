@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { http } from '../api/http';
 import { useAuth } from '../context/AuthContext';
+import { useAction } from '../hooks/useAction';
 import { useFetch } from '../hooks/useFetch';
 import StatusBadge from '../components/StatusBadge';
 import { EmptyState, ErrorBanner, PageTitle, Spinner } from '../components/ui';
@@ -55,8 +57,9 @@ export default function Disputes() {
 }
 
 function AdminStats() {
-  const { data, error } = useFetch('/admin/stats');
-  if (error) return <ErrorBanner message={error} />;
+  const { data, error, reload } = useFetch('/admin/stats');
+  const { run, pending } = useAction();
+  if (error) return <ErrorBanner message={error} onRetry={reload} />;
   if (!data) return null;
   const { ledger } = data;
   const tiles = [
@@ -65,6 +68,10 @@ function AdminStats() {
     ['Open disputes', data.openDisputes],
     ['Held in escrow', money(ledger.inEscrow)],
   ];
+  const retry = async (id) => {
+    const res = await run(() => http.post(`/admin/refunds/${id}/retry`));
+    if (res) reload();
+  };
   return (
     <div className="space-y-3">
       <div className="grid gap-3 sm:grid-cols-4">
@@ -76,9 +83,24 @@ function AdminStats() {
         ))}
       </div>
       <p className={`rounded-md px-3 py-2 text-sm ${ledger.balanced ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
-        Ledger check: {money(ledger.toppedUp)} topped up = {money(ledger.inWallets)} in wallets + {money(ledger.inEscrow)} in escrow{' '}
-        {ledger.balanced ? '✓ balanced' : '✗ MISMATCH, investigate'}
+        Ledger check: {money(ledger.paidIn)} paid in via Razorpay = {money(ledger.inEscrow)} in escrow + {money(ledger.released)} released to
+        freelancers + {money(ledger.refunded)} refunded {ledger.balanced ? '✓ balanced' : '✗ MISMATCH, investigate'}
       </p>
+      {data.failedRefunds.length > 0 && (
+        <div className="card border-red-200">
+          <p className="mb-2 text-sm font-semibold text-red-700">Failed Razorpay refunds (retried automatically every 5 minutes)</p>
+          {data.failedRefunds.map((r) => (
+            <div key={r._id} className="flex items-center justify-between gap-2 py-1 text-sm">
+              <span>
+                {money(r.amount)} · {r.gig?.title} · {r.attempts} attempts · <span className="text-red-700">{r.lastError}</span>
+              </span>
+              <button type="button" className="btn-secondary" disabled={pending} onClick={() => retry(r._id)}>
+                Retry now
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

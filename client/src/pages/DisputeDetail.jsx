@@ -98,7 +98,7 @@ function Decision({ dispute }) {
         Resolved by {dispute.resolvedBy?.name ?? 'admin'}: {dispute.decision}
       </p>
       <p>
-        {money(dispute.freelancerAmount)} to freelancer · {money(dispute.clientAmount)} refunded to client
+        {money(dispute.freelancerAmount)} to freelancer · {money(dispute.clientAmount)} refunded to the client via Razorpay
       </p>
       <p className="mt-2 whitespace-pre-line">{dispute.adminNote}</p>
     </section>
@@ -162,7 +162,7 @@ function ResolveForm({ dispute, onDone }) {
         </Field>
       )}
       <p className="text-sm text-gray-600">
-        Freelancer gets <b>{money(toFreelancer)}</b>, client gets back <b>{money(dispute.amount - toFreelancer)}</b>.
+        Freelancer gets <b>{money(toFreelancer)}</b>, client gets back <b>{money(dispute.amount - toFreelancer)}</b> as a Razorpay refund.
       </p>
       <Field label="Decision note" hint="Shown to both parties. At least 10 characters.">
         <textarea className="input" required minLength={10} value={note} onChange={(e) => setNote(e.target.value)} />

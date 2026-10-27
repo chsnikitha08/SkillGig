@@ -10,7 +10,8 @@ const userSchema = new mongoose.Schema(
     role: { type: String, enum: ROLES, required: true },
     bio: { type: String, maxlength: 500, default: '' },
     skills: { type: [String], default: [] },
-    // Available (spendable) credits. Money locked in escrow is tracked on the gig, not here.
+    // Freelancer earnings released from escrow (payout to a bank is out of scope; see README).
+    // Clients pay through Razorpay per gig and have no stored balance.
     walletBalance: { type: Number, default: 0, min: 0 },
     // Ratings are stored as a running sum so the average can be updated atomically with $inc.
     ratingSum: { type: Number, default: 0 },

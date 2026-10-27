@@ -22,4 +22,13 @@ export const env = {
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean),
+  razorpay: {
+    keyId: process.env.RAZORPAY_KEY_ID || '',
+    keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
+  },
 };
+
+if (!isTest && !(env.razorpay.keyId && env.razorpay.keySecret)) {
+  console.warn('RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET not set: funding escrow will be unavailable.');
+}

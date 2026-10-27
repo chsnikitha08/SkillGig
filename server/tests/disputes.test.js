@@ -14,7 +14,7 @@ const reason = { reason: 'The client has not responded to my submission for a we
 describe('disputes', () => {
   it('freelancer disputes submitted work, other side responds, admin splits', async () => {
     const admin = await createAdmin();
-    const ctx = await fundedGig(); // 1000 + 2000, client wallet 5000 -> 2000
+    const ctx = await fundedGig(); // 1000 + 2000 paid via (fake) Razorpay
     await submit(ctx, 0);
 
     const raised = await api().post(msUrl(ctx, 0, 'dispute')).set(ctx.freelancer.auth).send(reason);
@@ -42,8 +42,8 @@ describe('disputes', () => {
     assert.equal(done.body.gig.milestones[0].status, 'split');
     assert.equal((await resolve({ decision: 'refund', note: 'Changed my mind here' })).status, 409);
 
-    assert.equal((await balanceOf(ctx.freelancer)).walletBalance, 600);
-    assert.equal((await balanceOf(ctx.client)).walletBalance, 2400);
+    assert.equal((await balanceOf(ctx.freelancer)).earnings, 600);
+    assert.equal((await balanceOf(ctx.client)).refunded, 400);
 
     const stats = await api().get('/api/admin/stats').set(admin.auth);
     assert.equal(stats.body.ledger.balanced, true);
@@ -63,7 +63,7 @@ describe('disputes', () => {
     const raised = await api().post(msUrl(ctx, 1, 'dispute')).set(ctx.client.auth).send(reason);
     assert.equal(raised.status, 201);
     await api().post(`/api/disputes/${raised.body.dispute._id}/resolve`).set(admin.auth).send({ decision: 'refund', note: 'Freelancer never delivered.' });
-    assert.equal((await balanceOf(ctx.client)).walletBalance, 4000);
+    assert.equal((await balanceOf(ctx.client)).refunded, 2000);
 
     // Settle the other milestone; the gig completes even with one refund.
     await submit(ctx, 0);

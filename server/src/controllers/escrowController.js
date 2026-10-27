@@ -8,7 +8,6 @@ const handle = (fn) => async (req, res) => {
   res.json(result);
 };
 
-export const fund = handle((req) => escrow.fundGig(req.valid.params.id, req.user));
 export const submit = handle((req) => escrow.submitMilestone(req.valid.params.id, req.valid.params.mid, req.user, req.valid.body));
 export const revise = handle((req) => escrow.requestRevision(req.valid.params.id, req.valid.params.mid, req.user, req.valid.body));
 export const approve = handle((req) => escrow.approveMilestone(req.valid.params.id, req.valid.params.mid, req.user));

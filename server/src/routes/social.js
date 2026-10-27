@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { listMessages, listNotifications, markAllRead, profile, review, sendMessage } from '../controllers/socialController.js';
 import { raise } from '../controllers/disputeController.js';
-import { stats } from '../controllers/adminController.js';
+import { retryRefund, stats } from '../controllers/adminController.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
 import { gigMilestoneParams, idParam } from '../validators/common.js';
@@ -23,5 +23,6 @@ router.get('/notifications', listNotifications);
 router.post('/notifications/read', markAllRead);
 
 router.get('/admin/stats', requireRole('admin'), stats);
+router.post('/admin/refunds/:id/retry', requireRole('admin'), id, retryRefund);
 
 export default router;

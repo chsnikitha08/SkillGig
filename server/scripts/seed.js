@@ -1,6 +1,7 @@
 /**
  * Creates demo accounts and gigs in every state so evaluators can try the app at once.
- * All money moves through escrowService, so the seeded ledger reconciles exactly.
+ * Gigs that start funded use simulated 'demo' payments; to see real Razorpay test
+ * checkout, fund the open "Robotics Club logo" gig after hiring Arjun.
  *
  *   npm run seed            # only if the database has no users yet
  *   npm run seed -- --reset # wipe everything first
@@ -12,7 +13,9 @@ import { Gig } from '../src/models/Gig.js';
 import { Application } from '../src/models/Application.js';
 import { Review } from '../src/models/Review.js';
 import { Message } from '../src/models/Message.js';
-import { approveMilestone, fundGig, submitMilestone, topUp } from '../src/services/escrowService.js';
+import { Payment } from '../src/models/Payment.js';
+import { approveMilestone, submitMilestone } from '../src/services/escrowService.js';
+import { confirmFunding } from '../src/services/paymentService.js';
 import { leaveReview } from '../src/services/ratingService.js';
 import { flushNotifications } from '../src/services/notificationService.js';
 import { scaleAmounts } from '../src/utils/money.js';
@@ -48,8 +51,19 @@ async function main() {
     skills: ['video', 'editing', 'design'],
   });
 
-  await topUp(rahul, 10000, 'seed');
-  await topUp(sneha, 5000, 'seed');
+  // Pre-funded demo gigs use a 'demo' payment instead of a real checkout; everything
+  // after that (ledger, escrow, release) runs through the real services.
+  async function demoFund(g, client) {
+    const fresh = await Gig.findById(g._id);
+    const payment = await Payment.create({
+      gig: g._id,
+      client: client._id,
+      provider: 'demo',
+      orderId: `demo_order_${g._id}`,
+      amount: fresh.agreedAmount,
+    });
+    await confirmFunding(payment._id, `demo_pay_${g._id}`);
+  }
 
   const gig = (client, data) =>
     Gig.create({
@@ -118,7 +132,7 @@ async function main() {
     ],
   });
   await hire(site, priya, 3000, 'I have built 5 portfolio sites in React; I can share links.');
-  await fundGig(site._id, rahul);
+  await demoFund(site, rahul);
   const fresh = await Gig.findById(site._id);
   await submitMilestone(site._id, fresh.milestones[0]._id, priya, {
     note: 'Figma mockup with desktop and mobile layouts. Comments welcome!',
@@ -138,7 +152,7 @@ async function main() {
     deadline: days(6),
   });
   await hire(poster, priya, 800, 'Posters are my favourite, can deliver in 2 days.');
-  await fundGig(poster._id, sneha);
+  await demoFund(poster, sneha);
   const p = await Gig.findById(poster._id);
   await submitMilestone(poster._id, p.milestones[0]._id, priya, { note: 'Final poster PDF and PNG.', link: 'https://drive.google.com/' });
   await approveMilestone(poster._id, p.milestones[0]._id, sneha);

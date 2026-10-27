@@ -30,7 +30,7 @@ export default function Navbar() {
             </NavLink>
             {user.role !== 'admin' && (
               <NavLink to="/wallet" className={linkCls}>
-                Wallet
+                {user.role === 'client' ? 'Payments' : 'Earnings'}
               </NavLink>
             )}
             {user.role === 'admin' ? (
@@ -47,8 +47,8 @@ export default function Navbar() {
         <div className="ml-auto flex items-center gap-4">
           {user ? (
             <>
-              {user.role !== 'admin' && (
-                <Link to="/wallet" className="rounded-md bg-emerald-50 px-2 py-1 text-sm font-medium text-emerald-700">
+              {user.role === 'freelancer' && (
+                <Link to="/wallet" className="rounded-md bg-emerald-50 px-2 py-1 text-sm font-medium text-emerald-700" title="Earnings">
                   {money(user.walletBalance)}
                 </Link>
               )}
