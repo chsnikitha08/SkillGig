@@ -10,7 +10,8 @@ import { money } from '../utils/format';
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const overlay = useLocation().pathname === '/';
+  const { pathname } = useLocation();
+  const overlay = pathname === '/';
 
   const linkCls = ({ isActive }) =>
     `text-sm font-medium transition ${
@@ -69,12 +70,19 @@ export default function Navbar() {
             </>
           ) : (
             <>
-              <NavLink to="/login" className={linkCls}>
-                Log in
-              </NavLink>
-              <Link to="/register" className={overlay ? 'btn-secondary border-white py-2' : 'btn-dark py-2'}>
-                Sign up
-              </Link>
+              {/* The filled button follows the page: "Log in" on the login page, "Sign up" everywhere else. */}
+              {[
+                ['/login', 'Log in'],
+                ['/register', 'Sign up'],
+              ].map(([to, label]) => {
+                const highlighted = pathname === '/login' ? to === '/login' : to === '/register';
+                const cls = highlighted ? (overlay ? 'btn-secondary border-white py-2' : 'btn-dark py-2') : linkCls({ isActive: false });
+                return (
+                  <Link key={to} to={to} className={cls}>
+                    {label}
+                  </Link>
+                );
+              })}
             </>
           )}
         </div>
