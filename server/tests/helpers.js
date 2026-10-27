@@ -85,3 +85,11 @@ export async function fundedGig(opts) {
 }
 
 export const balanceOf = async (u) => (await api().get('/api/wallet').set(u.auth)).body;
+
+export async function createAdmin() {
+  const bcrypt = (await import('bcryptjs')).default;
+  const { User } = await import('../src/models/User.js');
+  await User.create({ name: 'Admin', email: 'admin@test.dev', role: 'admin', passwordHash: await bcrypt.hash('password123', 4) });
+  const res = await request(app).post('/api/auth/login').send({ email: 'admin@test.dev', password: 'password123' });
+  return { token: res.body.token, user: res.body.user, auth: { Authorization: `Bearer ${res.body.token}` } };
+}

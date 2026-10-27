@@ -4,6 +4,7 @@ import { Application } from '../models/Application.js';
 import { Review } from '../models/Review.js';
 import { notFound } from '../utils/AppError.js';
 import { notify } from '../services/notificationService.js';
+import { gigChanged } from '../services/realtime.js';
 import { assertClientOwner, canView, findGigOr404, isParticipant } from '../services/gigAccess.js';
 import { GIG_STATUS, assertGigTransition } from '../services/stateMachine.js';
 
@@ -116,6 +117,7 @@ export async function cancelGig(req, res) {
       { session },
     );
   });
+  gigChanged(gig._id);
   if (freelancerId) notify(freelancerId, 'gig_cancelled', `"${gig.title}" was cancelled by the client`, gig._id);
   res.json({ gig });
 }

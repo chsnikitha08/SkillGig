@@ -7,6 +7,8 @@ import authRoutes from './routes/auth.js';
 import gigRoutes from './routes/gigs.js';
 import applicationRoutes from './routes/applications.js';
 import walletRoutes from './routes/wallet.js';
+import disputeRoutes from './routes/disputes.js';
+import socialRoutes from './routes/social.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 
 export function createApp() {
@@ -24,6 +26,8 @@ export function createApp() {
   app.use('/api/gigs', gigRoutes);
   app.use('/api/applications', applicationRoutes);
   app.use('/api/wallet', walletRoutes);
+  app.use('/api/disputes', disputeRoutes);
+  app.use('/api', socialRoutes);
 
   app.use(notFoundHandler);
   app.use(errorHandler);

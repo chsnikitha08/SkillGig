@@ -1,20 +1,32 @@
 import { Notification } from '../models/Notification.js';
-
-// Set by the Socket.io layer at startup. Stays a no-op in tests and if sockets are off.
-let push = () => {};
-export const setNotificationPusher = (fn) => {
-  push = fn;
-};
+import { User } from '../models/User.js';
+import { emitToUser } from './realtime.js';
 
 /**
  * Notifications are best-effort: they are written after the business operation
  * has committed, and a failure here must never undo or fail that operation.
  */
-export async function notify(userId, type, message, gigId) {
+const pending = new Set();
+
+export function notify(userId, type, message, gigId) {
+  const p = write(userId, type, message, gigId).finally(() => pending.delete(p));
+  pending.add(p);
+  return p;
+}
+
+/** Waits for in-flight notifications (used by scripts before disconnecting). */
+export const flushNotifications = () => Promise.all([...pending]);
+
+async function write(userId, type, message, gigId) {
   try {
     const n = await Notification.create({ user: userId, type, message, gig: gigId });
-    push(userId.toString(), n.toJSON());
+    emitToUser(userId.toString(), 'notification', n.toJSON());
   } catch (err) {
     console.error('Failed to create notification', err);
   }
+}
+
+export async function notifyAdmins(type, message, gigId) {
+  const admins = await User.find({ role: 'admin' }, '_id');
+  await Promise.all(admins.map((a) => notify(a._id, type, message, gigId)));
 }

@@ -1,20 +1,14 @@
 import * as escrow from '../services/escrowService.js';
+import { gigChanged } from '../services/realtime.js';
 
-export async function fund(req, res) {
-  res.json(await escrow.fundGig(req.valid.params.id, req.user));
-}
+// Each handler runs the service, then tells anyone viewing the gig page to refresh.
+const handle = (fn) => async (req, res) => {
+  const result = await fn(req);
+  gigChanged(req.valid.params.id);
+  res.json(result);
+};
 
-export async function submit(req, res) {
-  const { id, mid } = req.valid.params;
-  res.json(await escrow.submitMilestone(id, mid, req.user, req.valid.body));
-}
-
-export async function revise(req, res) {
-  const { id, mid } = req.valid.params;
-  res.json(await escrow.requestRevision(id, mid, req.user, req.valid.body));
-}
-
-export async function approve(req, res) {
-  const { id, mid } = req.valid.params;
-  res.json(await escrow.approveMilestone(id, mid, req.user));
-}
+export const fund = handle((req) => escrow.fundGig(req.valid.params.id, req.user));
+export const submit = handle((req) => escrow.submitMilestone(req.valid.params.id, req.valid.params.mid, req.user, req.valid.body));
+export const revise = handle((req) => escrow.requestRevision(req.valid.params.id, req.valid.params.mid, req.user, req.valid.body));
+export const approve = handle((req) => escrow.approveMilestone(req.valid.params.id, req.valid.params.mid, req.user));

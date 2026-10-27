@@ -5,6 +5,7 @@ import { User } from '../models/User.js';
 import { badRequest, conflict, forbidden, notFound } from '../utils/AppError.js';
 import { scaleAmounts } from '../utils/money.js';
 import { notify } from '../services/notificationService.js';
+import { gigChanged } from '../services/realtime.js';
 import { assertClientOwner, findGigOr404 } from '../services/gigAccess.js';
 import { GIG_STATUS, assertGigTransition } from '../services/stateMachine.js';
 
@@ -25,6 +26,7 @@ export async function apply(req, res) {
     throw err;
   }
   await Gig.updateOne({ _id: gig._id }, { $inc: { applicationCount: 1 } });
+  gigChanged(gig._id);
   notify(gig.client, 'new_application', `${req.user.name} applied to "${gig.title}" for ${quotedPrice} credits`, gig._id);
   res.status(201).json({ application });
 }
@@ -93,6 +95,7 @@ export async function accept(req, res) {
     await Application.updateMany({ gig: gig._id, status: 'pending' }, { status: 'rejected' }, { session });
   });
 
+  gigChanged(gig._id);
   notify(application.freelancer, 'application_accepted', `You were hired for "${gig.title}". Wait for the client to fund escrow.`, gig._id);
   rejected.forEach((a) => notify(a.freelancer, 'application_rejected', `Another freelancer was chosen for "${gig.title}"`, gig._id));
   res.json({ gig, application });
