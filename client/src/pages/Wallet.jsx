@@ -57,7 +57,7 @@ export default function Wallet() {
       <p className="text-xs text-gray-500">
         {isClient
           ? 'Escrow is paid through Razorpay (test mode). Refunds from cancelled gigs and dispute decisions go back to the original payment method.'
-          : 'Released payments are recorded here. Bank payouts are not part of this demo (they require a RazorpayX business account).'}
+          : 'Released payments are recorded here. Bank payouts are not enabled yet (they require a RazorpayX business account).'}
       </p>
 
       <section>

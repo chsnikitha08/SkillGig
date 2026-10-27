@@ -3,15 +3,11 @@ import mongoose from 'mongoose';
 /**
  * A client's payment that funds a gig's escrow. One Razorpay order per attempt;
  * becomes `paid` only after the server has verified the payment with Razorpay.
- *
- * provider 'demo' is used only by the seed script for pre-funded demo gigs, so the
- * demo works without real checkouts. Refunds on demo payments are simulated.
  */
 const paymentSchema = new mongoose.Schema(
   {
     gig: { type: mongoose.Schema.Types.ObjectId, ref: 'Gig', required: true, index: true },
     client: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, index: true },
-    provider: { type: String, enum: ['razorpay', 'demo'], default: 'razorpay' },
     orderId: { type: String, required: true, unique: true },
     paymentId: { type: String },
     amount: { type: Number, required: true, min: 1 }, // rupees

@@ -98,7 +98,7 @@ export async function verifyCheckout(gigId, user, { orderId, paymentId, signatur
 export async function syncFunding(gigId, user) {
   const gig = await findGigOr404(gigId);
   assertClientOwner(gig, user);
-  const open = await Payment.find({ gig: gig._id, status: 'created', provider: 'razorpay' });
+  const open = await Payment.find({ gig: gig._id, status: 'created' });
   let result = null;
   for (const payment of open) {
     const items = await getGateway().fetchOrderPayments(payment.orderId);
@@ -164,7 +164,7 @@ export async function confirmFunding(paymentDocId, razorpayPaymentId) {
           fromUser: payment.client,
           gig: payment.gig,
           key: `fund:${payment._id}`,
-          note: payment.provider === 'demo' ? 'Demo payment (seed data)' : `Razorpay payment ${razorpayPaymentId}`,
+          note: `Razorpay payment ${razorpayPaymentId}`,
         },
       ],
       { session },
@@ -238,21 +238,15 @@ export async function processRefund(refundId) {
 
   const payment = await Payment.findById(refund.payment);
   try {
-    let refundExternalId;
-    if (payment.provider === 'demo') {
-      refundExternalId = `demo_rfnd_${refund._id}`; // seeded demo data has no real payment to refund
-    } else {
-      const rr = await getGateway().refund(payment.paymentId, {
-        amount: refund.amount * PAISE,
-        receipt: `rf_${refund._id}`,
-        notes: { gigId: refund.gig.toString(), reason: refund.reason.slice(0, 200) },
-      });
-      refundExternalId = rr.id;
-    }
+    const rr = await getGateway().refund(payment.paymentId, {
+      amount: refund.amount * PAISE,
+      receipt: `rf_${refund._id}`,
+      notes: { gigId: refund.gig.toString(), reason: refund.reason.slice(0, 200) },
+    });
     await Payment.updateOne({ _id: payment._id }, { $inc: { refundedAmount: refund.amount } });
     return await Refund.findByIdAndUpdate(
       refund._id,
-      { status: 'processed', razorpayRefundId: refundExternalId, processedAt: new Date(), lastError: null },
+      { status: 'processed', razorpayRefundId: rr.id, processedAt: new Date(), lastError: null },
       { new: true },
     );
   } catch (err) {

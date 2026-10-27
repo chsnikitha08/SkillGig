@@ -7,6 +7,7 @@ SkillGig is a marketplace where students post small paid gigs (a logo, typed not
 - **Live app:** _add Vercel URL here_
 - **API:** _add Render URL here_ (health check: `/api/health`)
 - **Demo video:** _add link here_
+- **Admin access for evaluators:** shared privately in the submission form (not published here)
 
 ## Problem Statement
 
@@ -35,7 +36,7 @@ Students already trade skills informally through WhatsApp groups and Instagram D
 > **What is real and what is simulated**
 > - **Real (Razorpay test mode):** client payments through Razorpay Checkout, server-side signature and payment verification, capture, webhooks, and **refunds** (full or partial) back to the original payment.
 > - **Simulated:** the escrow *hold* is SkillGig's own ledger rather than a regulated escrow account, and released money is recorded as freelancer **earnings** without a bank payout. Real escrow and payouts need RazorpayX or Route, which require a KYC-verified business account.
-> - Runs in **test mode only**: no real money moves. Test card: `4111 1111 1111 1111`, any future expiry, any CVV.
+> - Runs in **test mode only**: no real money moves. Test card: `4386 2894 0766 0153` (domestic Visa), any future expiry, any CVV, or UPI `success@razorpay`. International test cards such as `4111…` are declined because new Razorpay accounts accept Indian cards only.
 
 ## Key Features
 
@@ -214,7 +215,7 @@ cp .env.example .env
 #   set MONGODB_URI=mongodb://127.0.0.1:27018/skillgig?replicaSet=rs0
 #   set JWT_SECRET to the output of: openssl rand -hex 32
 #   set RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET to your Razorpay TEST keys
-npm run seed        # demo accounts and gigs in every state
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a-long-password' npm run create-admin
 npm run dev         # http://localhost:5050
 
 # 3. Frontend (new terminal)
@@ -229,21 +230,14 @@ Run the API test suite (it starts its own in-memory replica set and needs no set
 cd server && npm test
 ```
 
-### Demo accounts
+### Accounts and roles
 
-All demo accounts use the password **`demo1234`**. The login page has one-click buttons for each.
+There is no demo data: every account is a real sign-up and every payment is a real Razorpay test payment.
 
-| Role | Email | Seeded state |
-|---|---|---|
-| Client | `rahul@skillgig.dev` | Has an open gig with an applicant, and an in-progress gig with a submitted milestone |
-| Client | `sneha@skillgig.dev` | Has a completed and reviewed gig |
-| Freelancer | `priya@skillgig.dev` | Has 5★ reputation, an active gig and earnings |
-| Freelancer | `arjun@skillgig.dev` | Has applied to the Robotics Club logo gig |
-| Admin | `admin@skillgig.dev` | Has the dispute console and ledger check |
+- **Clients and freelancers** sign up on the Register page.
+- **The admin** cannot sign up. The API rejects the `admin` role at registration, and the login page doesn't mention it. The only way to create one is `npm run create-admin` on the server, with the email and password passed as environment variables, so admin credentials never appear in the code or the UI. Running it again with the same email resets the password.
 
-**Suggested demo:** log in as Rahul and accept Arjun on the *Robotics Club logo* gig, then pay with Razorpay using test card `4111 1111 1111 1111`. In a second browser, log in as Arjun: the gig flips to "Funds secured" live. Submit, approve, and check Rahul's Payments and Arjun's Earnings. Then raise a dispute **on that same gig** and resolve it as the admin with a split: the refund appears in the Razorpay test dashboard.
-
-> The seeded *Portfolio website* and *Hackathon poster* gigs are pre-funded with simulated `demo` payments so the app has data straight away. Refunds on those are simulated; gigs you pay for through checkout get real Razorpay test refunds.
+**Trying the full flow:** sign up a client and a freelancer (use an incognito window for the second one). The client posts a gig and the freelancer applies. The client accepts and pays with Razorpay using test card `4386 2894 0766 0153` (any future expiry, any CVV, any OTP) or UPI `success@razorpay`. The freelancer's page flips to "Funds secured" live. The freelancer submits, and the client approves or raises a dispute, which the admin resolves. Refunds appear in the Razorpay test dashboard.
 
 ## Environment Variables
 
@@ -273,7 +267,7 @@ No secrets are committed: `.env` files are git-ignored and only `.env.example` f
 
 1. **MongoDB Atlas:** create a free M0 cluster and a database user with a strong password. Under Network Access, allow `0.0.0.0/0` (Render's IPs are dynamic). Copy the connection string and add `/skillgig` as the database name.
 2. **Render (API):** create a new Blueprint from this repo. It reads [render.yaml](render.yaml) (root dir `server`, health check `/api/health`). Set `MONGODB_URI`, and set `CLIENT_URL` to the Vercel URL. `JWT_SECRET` is generated automatically.
-   Seed the Atlas database once from your machine: `cd server && MONGODB_URI="<atlas uri>" npm run seed`.
+   Create the admin once from your machine: `cd server && MONGODB_URI="<atlas uri>" ADMIN_EMAIL=… ADMIN_PASSWORD=… npm run create-admin`.
 3. **Razorpay (test mode):** in the Razorpay Dashboard with **Test Mode** on, go to Account & Settings → API Keys and generate a key; put both values on Render. Optionally add a webhook at `https://<render-url>/api/payments/webhook` with events `payment.captured` and `order.paid`, and set the same secret as `RAZORPAY_WEBHOOK_SECRET`.
 4. **Vercel (client):** import the repo with **Root Directory** `client` (framework: Vite). Set `VITE_API_URL` to the Render URL. [client/vercel.json](client/vercel.json) rewrites all routes to `index.html` for client-side routing.
 5. Update `CLIENT_URL` on Render if the Vercel URL changes, and open both links in an incognito window to verify.

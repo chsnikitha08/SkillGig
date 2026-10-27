@@ -166,7 +166,7 @@ function NextStep({ gig, isClient, isFreelancer, onChanged }) {
           Pay <b>{money(gig.agreedAmount)}</b> into escrow so {gig.freelancer.name} can start. SkillGig holds it and releases each milestone only
           when you approve it.
         </p>
-        <p className="mt-1 text-xs">Secure checkout by Razorpay (test mode: use test card 4111 1111 1111 1111, any future expiry, any CVV).</p>
+        <p className="mt-1 text-xs">Secure checkout by Razorpay (test mode: card 4386 2894 0766 0153, any future expiry, any CVV, or UPI success@razorpay).</p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <button type="button" className="btn-primary" disabled={paying || pending} onClick={pay}>
             {paying ? 'Processing payment…' : `Pay ${money(gig.agreedAmount)} with Razorpay`}

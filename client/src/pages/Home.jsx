@@ -25,7 +25,7 @@ export default function Home() {
           Create an account
         </Link>
         <Link to="/login" className="btn-secondary">
-          Try a demo account
+          Log in
         </Link>
       </div>
       <ol className="mt-10 grid gap-3 sm:grid-cols-2">

@@ -4,13 +4,6 @@ import { errorMessage } from '../api/http';
 import { useAuth } from '../context/AuthContext';
 import { ErrorBanner, Field } from '../components/ui';
 
-const DEMO = [
-  ['Client (Rahul)', 'rahul@skillgig.dev'],
-  ['Freelancer (Priya)', 'priya@skillgig.dev'],
-  ['Freelancer (Arjun)', 'arjun@skillgig.dev'],
-  ['Admin', 'admin@skillgig.dev'],
-];
-
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -51,16 +44,6 @@ export default function Login() {
           New here? <Link to="/register" className="link">Create an account</Link>
         </p>
       </form>
-      <div className="card mt-4">
-        <p className="mb-2 text-sm font-medium text-gray-700">Demo accounts (password: demo1234)</p>
-        <div className="flex flex-wrap gap-2">
-          {DEMO.map(([label, email]) => (
-            <button key={email} type="button" className="btn-secondary text-xs" onClick={() => setForm({ email, password: 'demo1234' })}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }

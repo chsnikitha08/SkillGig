@@ -10,8 +10,8 @@
     "start": "node src/server.js",
     "dev": "node --watch --env-file-if-exists=.env src/server.js",
     "db:dev": "sh scripts/dev-db.sh",
-    "seed": "node --env-file-if-exists=.env scripts/seed.js",
-    "test": "NODE_ENV=test node --test --test-concurrency=1 \"tests/**/*.test.js\""
+    "test": "NODE_ENV=test node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "create-admin": "node --env-file-if-exists=.env scripts/create-admin.js"
   },
   "license": "MIT",
   "type": "module",
