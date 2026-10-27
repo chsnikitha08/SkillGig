@@ -34,7 +34,18 @@ const LABELS = {
   resolved: 'Resolved',
 };
 
-export default function StatusBadge({ status }) {
+// Applications reuse some status words ("accepted") with a different meaning.
+const APPLICATION_LABELS = { pending: 'Pending', accepted: 'Hired', rejected: 'Not selected', withdrawn: 'Withdrawn' };
+const APPLICATION_STYLES = { accepted: 'bg-emerald-100 text-emerald-800' };
+
+export default function StatusBadge({ status, kind }) {
+  if (kind === 'application') {
+    return (
+      <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${APPLICATION_STYLES[status] ?? STYLES[status] ?? 'bg-gray-100'}`}>
+        {APPLICATION_LABELS[status] ?? status}
+      </span>
+    );
+  }
   return (
     <span className={`inline-block whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium ${STYLES[status] ?? 'bg-gray-100'}`}>
       {LABELS[status] ?? status}

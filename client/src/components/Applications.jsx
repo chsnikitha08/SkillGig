@@ -36,7 +36,7 @@ export default function Applications({ gig, onChanged }) {
             </div>
             <div className="flex items-center gap-2">
               <span className="font-semibold">{money(a.quotedPrice)}</span>
-              <StatusBadge status={a.status} />
+              <StatusBadge status={a.status} kind="application" />
             </div>
           </div>
           <p className="mt-2 whitespace-pre-line text-sm text-gray-700">{a.pitch}</p>

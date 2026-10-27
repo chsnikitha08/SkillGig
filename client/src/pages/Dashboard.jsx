@@ -75,7 +75,7 @@ export default function Dashboard() {
                   <span>{a.gig?.title ?? 'Deleted gig'}</span>
                   <span className="flex items-center gap-3">
                     <span className="text-gray-500">quoted {money(a.quotedPrice)}</span>
-                    <StatusBadge status={a.status} />
+                    <StatusBadge status={a.status} kind="application" />
                   </span>
                 </Link>
               ))}

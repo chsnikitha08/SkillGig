@@ -268,7 +268,7 @@ function ApplyBox({ gig, application, onChanged }) {
       <section className="card">
         <h2 className="mb-2 font-semibold">Your application</h2>
         <p className="text-sm">
-          Quoted {money(application.quotedPrice)} · <StatusBadge status={application.status} />
+          Quoted {money(application.quotedPrice)} · <StatusBadge status={application.status} kind="application" />
         </p>
         <p className="mt-2 whitespace-pre-line text-sm text-gray-700">{application.pitch}</p>
         {application.status === 'pending' && (
