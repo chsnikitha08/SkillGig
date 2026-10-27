@@ -4,7 +4,6 @@ import { useAuth } from '../context/AuthContext';
 import Avatar from './Avatar';
 import Logo from './Logo';
 import NotificationBell from './NotificationBell';
-import { money } from '../utils/format';
 
 /** On the home page the bar sits transparently over the hero photo. */
 export default function Navbar() {
@@ -39,15 +38,6 @@ export default function Navbar() {
         <div className="ml-auto flex items-center gap-3">
           {user ? (
             <>
-              {user.role === 'freelancer' && (
-                <Link
-                  to="/wallet"
-                  className={`hidden rounded-lg px-2.5 py-1 text-sm font-semibold sm:inline ${overlay ? 'bg-white/15 text-white' : 'bg-brand-50 text-brand-700'}`}
-                  title="Earnings"
-                >
-                  {money(user.walletBalance)}
-                </Link>
-              )}
               <NotificationBell light={overlay} />
               <Link
                 to={user.role === 'admin' ? '/admin' : `/users/${user._id}`}
