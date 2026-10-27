@@ -4,8 +4,9 @@
 
 SkillGig is a marketplace where students post small paid gigs (a logo, typed notes, a small website, a video edit) and other students take them on. The client pays through **Razorpay**, the money is held in **escrow** by the platform, and it is released milestone by milestone only when the work is approved. If the two sides disagree, an admin reviews the evidence and decides, and any refund goes back through Razorpay.
 
-- **Live app:** _add Vercel URL here_
-- **API:** _add Render URL here_ (health check: `/api/health`)
+- **Live app:** https://skill-gig.vercel.app
+- **API:** https://skillgig-api.onrender.com (health check: [`/api/health`](https://skillgig-api.onrender.com/api/health))
+- **Repository:** https://github.com/chsnikitha08/SkillGig
 - **Demo video:** _add link here_
 - **Admin access for evaluators:** shared privately in the submission form (not published here)
 
@@ -273,6 +274,8 @@ No secrets are committed: `.env` files are git-ignored and only `.env.example` f
 5. Update `CLIENT_URL` on Render if the Vercel URL changes, and open both links in an incognito window to verify.
 
 > Render's free tier sleeps after inactivity; the first request can take about 30 seconds to wake it.
+
+**Deployed setup used for this project:** frontend on Vercel (root `client`, `VITE_API_URL=https://skillgig-api.onrender.com`), API on Render as a Node web service (root `server`, build `npm ci --omit=dev`, start `npm start`, Node 22, `CLIENT_URL=https://skill-gig.vercel.app`), database on MongoDB Atlas.
 
 ## Limitations and Next Steps
 
