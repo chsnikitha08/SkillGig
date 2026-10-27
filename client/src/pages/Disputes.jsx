@@ -1,0 +1,84 @@
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useFetch } from '../hooks/useFetch';
+import StatusBadge from '../components/StatusBadge';
+import { EmptyState, ErrorBanner, PageTitle, Spinner } from '../components/ui';
+import { date, money } from '../utils/format';
+
+/** Admins get platform stats + every dispute; users get the disputes they are part of. */
+export default function Disputes() {
+  const { user } = useAuth();
+  const isAdmin = user.role === 'admin';
+  const [status, setStatus] = useState(isAdmin ? 'open' : 'all');
+  const { data, loading, error, reload } = useFetch(`/disputes?status=${status}`);
+
+  return (
+    <div className="space-y-6">
+      <PageTitle>{isAdmin ? 'Admin · Disputes' : 'My disputes'}</PageTitle>
+      {isAdmin && <AdminStats />}
+      <div className="flex gap-2">
+        {['open', 'resolved', 'all'].map((s) => (
+          <button key={s} type="button" className={status === s ? 'btn-primary' : 'btn-secondary'} onClick={() => setStatus(s)}>
+            {s}
+          </button>
+        ))}
+      </div>
+      <ErrorBanner message={error} onRetry={reload} />
+      {loading ? (
+        <Spinner />
+      ) : !data?.items.length ? (
+        <EmptyState title={`No ${status === 'all' ? '' : status} disputes`}>{isAdmin ? 'Nothing needs your attention.' : 'Good news!'}</EmptyState>
+      ) : (
+        <div className="card divide-y divide-gray-100 p-0">
+          {data.items.map((d) => (
+            <Link key={d._id} to={`/disputes/${d._id}`} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-gray-50">
+              <div>
+                <p className="font-medium">
+                  {d.gig?.title} · {d.milestoneTitle}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Raised by {d.raisedBy.name} ({d.raisedBy.role}) on {date(d.createdAt)}
+                  {!d.response && d.status === 'open' && ' · awaiting response'}
+                </p>
+              </div>
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-semibold">{money(d.amount)}</span>
+                <StatusBadge status={d.status} />
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AdminStats() {
+  const { data, error } = useFetch('/admin/stats');
+  if (error) return <ErrorBanner message={error} />;
+  if (!data) return null;
+  const { ledger } = data;
+  const tiles = [
+    ['Users', Object.values(data.users).reduce((a, b) => a + b, 0)],
+    ['Active gigs', (data.gigs.in_progress ?? 0) + (data.gigs.accepted ?? 0)],
+    ['Open disputes', data.openDisputes],
+    ['Held in escrow', money(ledger.inEscrow)],
+  ];
+  return (
+    <div className="space-y-3">
+      <div className="grid gap-3 sm:grid-cols-4">
+        {tiles.map(([label, value]) => (
+          <div key={label} className="card">
+            <p className="text-xs text-gray-500">{label}</p>
+            <p className="text-xl font-semibold">{value}</p>
+          </div>
+        ))}
+      </div>
+      <p className={`rounded-md px-3 py-2 text-sm ${ledger.balanced ? 'bg-emerald-50 text-emerald-800' : 'bg-red-50 text-red-800'}`}>
+        Ledger check: {money(ledger.toppedUp)} topped up = {money(ledger.inWallets)} in wallets + {money(ledger.inEscrow)} in escrow{' '}
+        {ledger.balanced ? '✓ balanced' : '✗ MISMATCH, investigate'}
+      </p>
+    </div>
+  );
+}

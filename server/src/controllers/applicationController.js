@@ -27,7 +27,7 @@ export async function apply(req, res) {
   }
   await Gig.updateOne({ _id: gig._id }, { $inc: { applicationCount: 1 } });
   gigChanged(gig._id);
-  notify(gig.client, 'new_application', `${req.user.name} applied to "${gig.title}" for ${quotedPrice} credits`, gig._id);
+  notify(gig.client, 'new_application', `${req.user.name} applied to "${gig.title}" for ₹${quotedPrice}`, gig._id);
   res.status(201).json({ application });
 }
 

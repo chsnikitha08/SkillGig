@@ -57,7 +57,7 @@ export async function raiseDispute(gigId, mid, user, reason) {
   });
 
   notify(dispute.against, 'dispute_raised', `${user.name} raised a dispute on "${ms.title}". Add your side of the story.`, gig._id);
-  notifyAdmins('dispute_raised', `New dispute on "${gig.title}" (${ms.amount} credits)`, gig._id);
+  notifyAdmins('dispute_raised', `New dispute on "${gig.title}" (₹${ms.amount})`, gig._id);
   return { gig, dispute };
 }
 
@@ -125,7 +125,7 @@ export async function resolveDispute(disputeId, admin, { decision, freelancerAmo
     });
   });
 
-  const msg = `Dispute on "${dispute.milestoneTitle}" resolved: ${dispute.freelancerAmount} credits to freelancer, ${dispute.clientAmount} refunded to client.`;
+  const msg = `Dispute on "${dispute.milestoneTitle}" resolved: ₹${dispute.freelancerAmount} to freelancer, ₹${dispute.clientAmount} refunded to client.`;
   notify(gig.client, 'dispute_resolved', msg, gig._id);
   notify(gig.freelancer, 'dispute_resolved', msg, gig._id);
   return { dispute, gig };

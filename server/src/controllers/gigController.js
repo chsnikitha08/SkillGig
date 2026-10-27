@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import { Gig } from '../models/Gig.js';
 import { Application } from '../models/Application.js';
 import { Review } from '../models/Review.js';
+import { Dispute } from '../models/Dispute.js';
 import { notFound } from '../utils/AppError.js';
 import { notify } from '../services/notificationService.js';
 import { gigChanged } from '../services/realtime.js';
@@ -68,7 +69,10 @@ export async function getGig(req, res) {
     extras.myApplication = await Application.findOne({ gig: gig._id, freelancer: req.user._id });
   }
   if (isParticipant(gig, req.user) || req.user.role === 'admin') {
-    extras.reviews = await Review.find({ gig: gig._id }).populate('reviewer', 'name');
+    [extras.reviews, extras.disputes] = await Promise.all([
+      Review.find({ gig: gig._id }).populate('reviewer', 'name'),
+      Dispute.find({ gig: gig._id }, 'milestoneId status decision'),
+    ]);
   }
   res.json({ gig, ...extras });
 }

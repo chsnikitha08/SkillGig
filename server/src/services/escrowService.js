@@ -107,7 +107,7 @@ export async function fundGig(gigId, user) {
   });
 
   if (!alreadyFunded) {
-    notify(gig.freelancer, 'gig_funded', `Funds secured: ${gig.agreedAmount} credits are in escrow for "${gig.title}". You can start working.`, gig._id);
+    notify(gig.freelancer, 'gig_funded', `Funds secured: ₹${gig.agreedAmount} are in escrow for "${gig.title}". You can start working.`, gig._id);
   }
   return { gig, alreadyDone: alreadyFunded };
 }
@@ -236,7 +236,7 @@ export async function approveMilestone(gigId, mid, user) {
   });
 
   if (!alreadyDone) {
-    notify(gig.freelancer, 'payment_released', `${ms.amount} credits released to your wallet for "${ms.title}"`, gig._id);
+    notify(gig.freelancer, 'payment_released', `₹${ms.amount} released to your wallet for "${ms.title}"`, gig._id);
     if (gig.status === GIG_STATUS.COMPLETED) {
       notify(gig.freelancer, 'gig_completed', `"${gig.title}" is complete. Leave a review for the client.`, gig._id);
       notify(gig.client, 'gig_completed', `"${gig.title}" is complete. Leave a review for the freelancer.`, gig._id);
