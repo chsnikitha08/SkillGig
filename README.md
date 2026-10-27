@@ -1,284 +1,339 @@
 # SkillGig
 
-**Freelancing for students, where nobody gets cheated.**
+**A freelance marketplace where your payment is protected until the work is approved.**
 
-SkillGig is a marketplace where students post small paid gigs (a logo, typed notes, a small website, a video edit) and other students take them on. The client pays through **Razorpay**, the money is held in **escrow** by the platform, and it is released milestone by milestone only when the work is approved. If the two sides disagree, an admin reviews the evidence and decides, and any refund goes back through Razorpay.
+Clients post paid gigs (a logo, a website, a video edit, notes, a pitch deck) and freelancers apply to do them. When a client hires someone, they pay through **Razorpay**, and SkillGig **holds the money** instead of handing it over straight away. The freelancer can see the money is secured before they start; the client only releases it, stage by stage, when they are happy with the work. If the two sides disagree, an admin looks at the evidence and decides who gets what.
 
-- **Live app:** https://skill-gig.vercel.app
-- **API:** https://skillgig-api.onrender.com (health check: [`/api/health`](https://skillgig-api.onrender.com/api/health))
-- **Repository:** https://github.com/chsnikitha08/SkillGig
-- **Demo video:** _add link here_
-- **Admin access for evaluators:** shared privately in the submission form (not published here)
+| | |
+|---|---|
+| **Live app** | https://skill-gig.vercel.app |
+| **API** | https://skillgig-api.onrender.com ([health check](https://skillgig-api.onrender.com/api/health)) |
+| **Repository** | https://github.com/chsnikitha08/SkillGig |
+| **Demo video** | _add link here_ |
+| **Admin login** | Shared privately in the submission form |
+
+> The API runs on Render's free tier, which sleeps when idle. The first request after a quiet period can take about 30 seconds; after that it responds in about a second.
+
+## Contents
+
+1. [Problem Statement](#problem-statement)
+2. [Target Users](#target-users)
+3. [Solution](#solution)
+4. [Key Features](#key-features)
+5. [Tech Stack](#tech-stack)
+6. [Architecture](#architecture)
+7. [Local Setup](#local-setup)
+8. [Environment Variables](#environment-variables)
+9. [Deployment](#deployment)
+10. [Testing](#testing)
+11. [Limitations and Next Steps](#limitations-and-next-steps)
+
+---
 
 ## Problem Statement
 
-Students already trade skills informally through WhatsApp groups and Instagram DMs. It breaks down because:
+A lot of small freelance work happens informally, through WhatsApp groups, Instagram DMs and word of mouth. Without a trusted middle layer it goes wrong in predictable ways:
 
-- **Clients get scammed:** they pay upfront and the freelancer disappears.
-- **Freelancers get scammed:** they finish the work and the client never pays.
-- **No reputation:** good freelancers cannot show a track record.
-- **No dispute path:** when something goes wrong, nobody can decide.
+- **Clients get cheated.** They pay upfront and the freelancer disappears.
+- **Freelancers get cheated.** They deliver the work and the client never pays.
+- **There is no track record.** Good freelancers have no way to prove they are reliable.
+- **There is no one to settle arguments.** When the work is disputed, it ends in silence or blocking.
+
+Both sides end up having to trust a stranger with their money or their time.
 
 ## Target Users
 
-| Role | Who | What they want |
+| Role | Who they are | What they need |
 |---|---|---|
-| Client | A student who needs something done | A safe way to pay and get work delivered |
-| Freelancer | A student with a skill | Guaranteed payment and a visible reputation |
-| Admin | Platform moderator | To resolve disputes fairly |
+| **Client** | Anyone who needs a task done: a club, a small business, a student, an organiser | A safe way to pay, and a guarantee they only pay for work they accept |
+| **Freelancer** | Anyone with a skill: design, development, writing, video, tutoring | Proof the money exists before they start, and a reputation that grows with each job |
+| **Admin** | A platform moderator | The full picture (both sides, the work, the chat) to resolve disputes fairly |
 
 ## Solution
 
-1. **Escrow via Razorpay:** the client pays the agreed price through Razorpay Checkout. The server verifies the payment with Razorpay and locks it against the gig. The freelancer sees "Funds secured" before starting.
-2. **Milestones:** larger gigs are split into parts that are submitted, approved and paid one by one.
-3. **Disputes:** either side can dispute submitted work; the client can also dispute work that was never delivered once the deadline has passed. An admin sees both statements, the submission and the chat, then releases, refunds or splits the money.
-4. **Reputation:** after completion, both sides rate each other, and ratings appear on profiles and applications.
+SkillGig adds the missing trust layer between the two sides.
 
-> **What is real and what is simulated**
-> - **Real (Razorpay test mode):** client payments through Razorpay Checkout, server-side signature and payment verification, capture, webhooks, and **refunds** (full or partial) back to the original payment.
-> - **Simulated:** the escrow *hold* is SkillGig's own ledger rather than a regulated escrow account, and released money is recorded as freelancer **earnings** without a bank payout. Real escrow and payouts need RazorpayX or Route, which require a KYC-verified business account.
-> - Runs in **test mode only**: no real money moves. Test card: `4386 2894 0766 0153` (domestic Visa), any future expiry, any CVV, or UPI `success@razorpay`. International test cards such as `4111…` are declined because new Razorpay accounts accept Indian cards only.
+**How a gig works, start to finish:**
+
+```
+ Client posts a gig ──► Freelancers apply ──► Client hires one
+                                                    │
+                                                    ▼
+                                  Client pays through Razorpay
+                              (SkillGig holds it: "Payment secured")
+                                                    │
+                                                    ▼
+             Freelancer submits each stage ──► Client reviews it
+                     ▲                                │
+                     └──── "Request changes" ◄────────┤
+                                                      ├──► "Approve & pay": that stage's money goes to the freelancer
+                                                      └──► "Raise dispute": an admin decides (pay, refund, or split)
+                                                    │
+                                                    ▼
+                         All stages settled ──► Gig completed ──► Both sides rate each other
+```
+
+1. **Payment protection.** The client pays the agreed price before work starts. SkillGig holds it, so the freelancer knows it is there and the client knows it will not be released without their approval.
+2. **Pay in stages.** Bigger gigs are split into stages (for example design → build → deploy). Each stage is approved and paid separately.
+3. **Fair disputes.** Either side can raise a dispute on submitted work, and the client can also raise one if nothing was delivered by the deadline. An admin sees both statements, the submitted work and the full chat, then releases the money, refunds it, or splits it.
+4. **Reputation.** When a gig is complete, both sides rate each other. Ratings and completed-gig counts appear on profiles, gig cards and applications.
+
+### What is real and what is simulated
+
+- **Real (Razorpay test mode):** clients pay through the real Razorpay Checkout; the server verifies every payment with Razorpay; refunds from cancelled gigs and dispute decisions are real Razorpay refunds and appear in the Razorpay dashboard.
+- **Simulated:** SkillGig "holds" the money in its own ledger rather than a regulated escrow account, and money released to a freelancer is recorded as **earnings** without a bank payout. Real escrow accounts and payouts (Razorpay Route or RazorpayX) need a KYC-verified business account.
+- **Test mode only:** no real money moves. To try a payment, use UPI `success@razorpay`, or test card `4386 2894 0766 0153` with any future expiry and any CVV.
 
 ## Key Features
 
-**Workflow 1: Post, apply, hire**
-- Clients post gigs with budget, deadline, required skills and optional milestones (validated to sum to the budget).
-- Freelancers search and filter by keyword, skill and budget range, and sort by newest, budget or deadline (paginated).
-- Freelancers apply with a pitch and a quoted price (one application per gig, enforced by a unique index).
-- The client accepts one applicant. The agreed price becomes the quote, milestone amounts are re-scaled proportionally, and the other applicants are declined, all in one transaction.
+### Workflow 1: Post, find and hire
+- Clients post a gig with a title, description, skills, budget, deadline and optional stages (stage amounts must add up to the budget).
+- Anyone can browse open gigs without an account, by **category** (Design, Development, Writing, Video, Presentations, Marketing, Tutoring, Audio), keyword, budget range, and sort order.
+- Freelancers apply with a pitch and their price. Each freelancer can apply to a gig once.
+- The client hires one applicant. The agreed price becomes the freelancer's quote, stage amounts are adjusted to match, and every other applicant is notified that someone else was chosen.
 
-**Workflow 2: Escrow, delivery and payment**
-- Pay escrow with Razorpay Checkout (test mode). The server creates the order for the exact agreed price, verifies the HMAC signature, and fetches the payment from Razorpay to confirm amount, order and capture before funding the gig.
-- A webhook and a "Check payment status" sync give two recovery paths, so a payment isn't lost if the browser closes after paying. All three paths share one idempotent confirmation step, so a payment is never counted twice.
-- If money arrives for a gig that can no longer take it (cancelled meanwhile, or paid twice from two tabs), it is refunded in full automatically.
-- Submit work per milestone (note and link); the client approves (releasing that milestone's money) or requests changes (up to 3 revisions).
-- An append-only ledger records every money movement. Clients see their payments and refund statuses on the Payments page; freelancers see their earnings on the Earnings page.
+### Workflow 2: Pay, deliver and get paid
+- The client pays through Razorpay Checkout. The freelancer's page updates live to "Payment secured" without a refresh.
+- The freelancer submits each stage with a note and a link to the work.
+- The client approves (the freelancer is paid for that stage) or requests changes (up to 3 times per stage).
+- Clients see every payment and refund on their **Payments** page; freelancers see what they have earned on their **Earnings** page.
 
-**Workflow 3: Disputes and reputation**
-- Raise a dispute; the other party adds their side; the admin resolves by release, refund or a custom split. The client's share is refunded through **Razorpay's refund API** on the original payment.
-- Two-way reviews after completion; the freelancer's average rating and completed-gig count update atomically.
+### Workflow 3: Disputes and reputation
+- Either side raises a dispute; the other side adds their version; the admin decides to pay, refund or split, with a written note both sides can read.
+- The client's share of a decision is refunded to their original payment method through Razorpay.
+- After completion, both sides leave a 1 to 5 star review, which updates the person's average rating.
 
-**Supporting features**
-- Live updates over Socket.io: when the other party funds, submits or approves, the open gig page refreshes by itself.
-- Per-gig chat, also shown to the admin during disputes.
-- In-app notifications with an unread badge and toasts.
-- An admin dashboard with a **ledger reconciliation** check (paid in through Razorpay = in escrow + released + refunded) and a list of failed refunds with a retry button.
-
-## Gig State Machine
-
-```
-Gig:        open ──► accepted ──► in_progress ──► completed
-              │          │
-              └──────────┴──► cancelled        (only before funding)
-
-Milestone:  pending ──► funded ──► submitted ──► released
-                          ▲  │         │
-                          │  │         ├──► funded      (client requests changes)
-                          │  │         ▼
-                          │  └────► disputed ──► released | refunded | split
-                          └─ (client, only after deadline, if nothing was submitted)
-```
-
-The transitions live in one table ([server/src/services/stateMachine.js](server/src/services/stateMachine.js)). Rules enforced on the server include:
-
-- Cannot fund without an accepted freelancer, and cannot fund with a payment whose amount or order doesn't match.
-- Cannot submit on an unfunded gig, and cannot approve before submission.
-- Cannot approve your own work, and only the gig's client can approve.
-- Cannot cancel after funding (raise a dispute instead).
-- Cannot release, refund or resolve the same milestone twice.
+### Also included
+- **Live updates and chat** on every gig (Socket.io), with clickable links for sharing portfolios and files.
+- **Notifications** with an unread badge for hires, payments, submissions, disputes and reviews.
+- **Admin dashboard** with platform stats, every dispute, and a payment check that confirms every rupee received is accounted for.
+- **Accounts and roles:** separate Client and Freelancer accounts (chosen at sign-up and confirmed at login). Admins cannot sign up through the website.
 
 ## Tech Stack
 
-| Layer | Technology | Why |
+| Layer | Technology | Why it was chosen |
 |---|---|---|
-| Frontend | React 19 (Vite) and Tailwind CSS 4 | Fast to build, small bundle |
-| Routing and state | React Router 7 and Context API | Enough for this scope; no global store needed |
-| Backend | Node.js and Express 5 | Native async error handling in Express 5 |
-| Database | MongoDB (Atlas) and Mongoose 8 | Flexible documents; **multi-document transactions** for money |
-| Auth | JWT and bcrypt | Stateless auth that works across the Vercel and Render origins |
-| Payments | Razorpay (test mode): Orders, Checkout, Payments, Refunds, Webhooks | Real payment flow without handling card data |
-| Validation | Zod | Every request body, query and param is parsed and typed |
-| Security | helmet, CORS allow-list, express-rate-limit | Basic hardening |
+| Frontend | React 19, Vite, Tailwind CSS 4, React Router 7 | Fast to build and load; simple routing and Context API for state |
+| Backend | Node.js 22, Express 5 | Familiar MERN stack; Express 5 handles async errors natively |
+| Database | MongoDB Atlas, Mongoose 8 | Flexible documents, plus **transactions** so money changes are all-or-nothing |
+| Payments | Razorpay (test mode): Orders, Checkout, Refunds, Webhooks | Real payment flow without ever handling card details |
+| Authentication | JWT, bcrypt | Stateless login that works across the Vercel and Render domains |
+| Validation | Zod | Every request is checked and cleaned before it reaches the logic |
 | Real-time | Socket.io | Live gig updates, chat and notifications |
-| Tests | `node:test`, supertest, mongodb-memory-server | Full API tests against a real in-memory replica set |
-| Deploy | Vercel (client), Render (API), MongoDB Atlas | Free tiers |
+| Security | helmet, CORS allow-list, rate limiting | Basic protection against common attacks and abuse |
+| Testing | Node's built-in test runner, supertest, mongodb-memory-server | Full API tests against a real in-memory database |
+| Hosting | Vercel (frontend), Render (API), MongoDB Atlas (database) | Free tiers, deploys from GitHub |
 
 ## Architecture
 
 ```
-┌──────────────────┐   HTTPS / JSON (Bearer JWT)   ┌──────────────────────┐
-│  React frontend  │ ────────────────────────────► │   Express REST API   │
-│     (Vercel)     │ ◄──────── Socket.io ───────── │       (Render)       │
-└──────────────────┘   gig updates, chat, notifs   └──────────┬───────────┘
-        │ Razorpay Checkout (card/UPI)                         │ Mongoose (transactions)
-        ▼                                          ┌──────────▼───────────┐
-┌──────────────────┐  orders, verify, refunds      │ MongoDB Atlas (repl.)│
-│ Razorpay (test)  │ ◄─────────────────────────────┤                      │
-│                  │ ──── webhook payment.captured ► /api/payments/webhook│
-└──────────────────┘                               └──────────────────────┘
+┌────────────────────┐    HTTPS + JSON (login token)    ┌──────────────────────┐
+│   React website    │ ───────────────────────────────► │   Express REST API   │
+│     (Vercel)       │ ◄────────── Socket.io ────────── │       (Render)       │
+└─────────┬──────────┘   live updates, chat, alerts     └──────────┬───────────┘
+          │ Razorpay Checkout                                      │ Mongoose
+          ▼                                                        ▼
+┌────────────────────┐   create order, verify, refund   ┌──────────────────────┐
+│ Razorpay (test)    │ ◄─────────────────────────────── │    MongoDB Atlas     │
+└────────────────────┘                                  └──────────────────────┘
 ```
+
+The **website** only displays data and sends user actions. All rules about who can do what, and all money handling, live in the **API**.
+
+**Code layout**
 
 ```
 server/src/
-  config/        env loading and validation, DB connection
-  models/        User, Gig (+ embedded milestones), Application, Transaction (ledger),
-                 Payment, Refund (outbox), Dispute, Review, Message, Notification
-  validators/    Zod schemas for every endpoint
-  middleware/    auth (JWT + role), validate, rate limits, error handler
-  services/      stateMachine, escrowService, paymentService (Razorpay flow + refund worker),
-                 paymentGateway (Razorpay adapter), disputeService, ratingService,
-                 gigAccess (authorization rules), notificationService, realtime
-  controllers/   thin HTTP handlers that call services
-  routes/        URL → middleware → controller
-  socket.js      Socket.io auth and per-gig rooms
+  models/        data: User, Gig (with stages), Application, Payment, Refund,
+                 Transaction (ledger), Dispute, Review, Message, Notification
+  services/      the business rules: stateMachine, paymentService, escrowService,
+                 disputeService, ratingService, gigAccess (permissions), realtime
+  controllers/   small HTTP handlers that call the services
+  routes/        which URL goes to which handler, with login and role checks
+  validators/    Zod rules for every request
+  middleware/    login check, validation, rate limits, error handling
 client/src/
-  api/           axios instance (token, error normalisation)
-  context/       AuthContext (session + socket), ToastContext
-  hooks/         useFetch, useAction (pending/toast), useGigRoom (live updates)
-  components/    GigCard, MilestoneList, Applications, Chat, NotificationBell, …
-  pages/         Gigs, GigDetail, PostGig, Dashboard, Wallet, Disputes, DisputeDetail, Profile, …
+  pages/         Home, Browse gigs, Gig page, Post a gig, Dashboard, Payments/Earnings,
+                 Disputes, Profile, Login, Sign up
+  components/    gig cards, stages list, applicants, chat, notifications, navbar…
+  hooks/ context/ api/   data fetching, login session, live connection
 ```
+
+### How a payment is kept safe
+
+1. The **server** creates the Razorpay order for exactly the agreed price. The browser never chooses the amount.
+2. After checkout, the server checks Razorpay's signature **and** asks Razorpay directly whether the payment really happened, for the right order and amount.
+3. Only then, in one database transaction, the payment is marked paid, the gig is marked funded, and a ledger entry is written. If any part fails, none of it happens.
+4. If the browser closes after paying, a "Refresh status" check (or a Razorpay webhook) finds the payment, and the same one-time confirmation step makes sure it is never counted twice.
+5. If money arrives for a gig that can no longer take it (for example, cancelled in another tab), it is refunded automatically in full.
+
+### Rules the server enforces
+
+Every gig and stage follows a fixed set of allowed steps ([stateMachine.js](server/src/services/stateMachine.js)):
+
+```
+Gig:    open ──► accepted (hired) ──► in progress (paid) ──► completed
+          └──────────┴──► cancelled   (only before payment)
+
+Stage:  not started ──► in progress ──► awaiting review ──► paid
+                           ▲    │             │
+                           │    │             ├──► in progress   (changes requested)
+                           │    │             ▼
+                           │    └──────► under review (dispute) ──► paid | refunded | split
+                           └─ client can dispute an undelivered stage after the deadline
+```
+
+For example: you cannot submit work before the client has paid; you cannot approve your own work; a gig cannot be cancelled after payment; and the same stage can never be paid out twice, even if "Approve" is clicked several times at once.
 
 ### Key engineering decisions
 
-- **Money logic lives in two services.** [paymentService.js](server/src/services/paymentService.js) handles money in from Razorpay and refunds out. [escrowService.js](server/src/services/escrowService.js) handles what happens to escrow. Controllers never touch balances directly, and admin dispute decisions reuse the same `settleMilestone` function as client approvals.
-- **Never trust the browser about payments.** A successful checkout callback is only accepted after verifying `HMAC(order_id|payment_id)` with the key secret *and* fetching the payment from Razorpay to check its order, amount and capture status. The amount is decided by the server when it creates the order.
-- **Refund outbox.** A refund decision is written to a `Refund` record in the same transaction as the escrow change; the Razorpay API call happens after commit. If Razorpay is down, the decision still stands, the refund is marked `failed`, and a background worker (every 5 minutes) or an admin "Retry now" button resends it. A conditional status update guarantees a refund is never sent twice.
-- **Razorpay behind an adapter** ([paymentGateway.js](server/src/services/paymentGateway.js)). Tests swap in a fake gateway that signs payments with a real HMAC, so the verification code runs unchanged and refund outages can be simulated.
-- **Every escrow operation follows the same four steps inside one MongoDB transaction:**
-  1. Load, authorize and check the state machine (readable 403/409 errors).
-  2. A *conditional* write that only matches the expected current state (`status: 'submitted'`), so a racing duplicate request matches nothing.
-  3. A balance change (freelancer earnings) or a queued Razorpay refund.
-  4. A ledger entry with a deterministic unique key (`release:<milestoneId>`), which the database will never accept twice.
+- **All-or-nothing money changes.** Every payment, payout and refund runs inside a MongoDB transaction, and each write only succeeds if the record is still in the expected state, so double clicks and simultaneous requests can never move money twice.
+- **A ledger that cannot be edited.** Every money movement adds one ledger entry with a unique key; the code rejects any attempt to change or delete an entry. The admin dashboard checks that money received = money on hold + paid to freelancers + refunded.
+- **Refunds that survive outages.** A refund decision is saved first and sent to Razorpay afterwards. If Razorpay is unreachable, the decision still stands and a background job retries every 5 minutes (admins can also retry by hand).
+- **Razorpay behind an adapter.** The rest of the code never calls Razorpay directly, so the tests replace it with a fake that signs payments the same way and can simulate outages.
+- **Privacy by default.** Once a gig has a freelancer, only the two people involved (and admins) can see it; anyone else gets "not found", so private gigs are not revealed.
 
-  If any step fails, everything rolls back. The tests send the same payment through checkout verify (twice), the webhook and sync at once, and fire simultaneous approvals, and assert that money moved exactly once.
-- **Idempotent double clicks:** a repeated approve returns `200` with `alreadyDone: true` instead of an error or a second payment, and re-opening checkout reuses the same Razorpay order.
-- **Immutable ledger:** the Transaction model rejects every update or delete operation.
-- **Ledger reconciliation:** every rupee paid in must be in escrow, released or refunded (`paidIn = inEscrow + released + refunded`), and released must equal freelancer earnings. The admin dashboard shows this check live.
-- **Ratings** are stored as `ratingSum` and `ratingCount` and updated with `$inc`, so concurrent reviews can't lose updates.
-- **Privacy:** gigs that are no longer open return `404` (not `403`) to non-participants, so their existence isn't leaked.
-- **Notifications are best-effort:** they are written after the business transaction commits and can never fail or roll it back.
+### Error handling
 
-## API Overview
+Errors always come back as `{ "error": { "message": "...", "code": "..." } }`, and the website shows the message in plain language.
 
-| Area | Endpoint | Who |
+| What goes wrong | What the user sees |
+|---|---|
+| Invalid input (short title, negative budget, bad link) | 400 with the field that needs fixing |
+| Forged or mismatched payment | 400, and nothing is marked as paid |
+| Payment for a gig that is no longer available | 409, and an automatic full refund |
+| Payment provider down | 502; refunds are queued and retried |
+| Not logged in, or session expired | 401, redirected to login |
+| Wrong role or not the owner | 403 with a reason |
+| Gig, stage or dispute not found | 404 |
+| Action not allowed right now (e.g. approve before submit) | 409 with a readable reason |
+| Too many attempts | 429 |
+| Anything unexpected | 500 with a generic message; details stay in the server logs |
+
+<details>
+<summary><strong>API endpoints</strong></summary>
+
+| Area | Endpoint | Who can call it |
 |---|---|---|
 | Auth | `POST /api/auth/register`, `POST /api/auth/login`, `GET/PATCH /api/auth/me` | Anyone / logged in |
-| Gigs | `GET /api/gigs?q=&skill=&min=&max=&sort=&page=` | Logged in |
+| Gigs | `GET /api/gigs?q=&skill=&min=&max=&sort=&page=` | Anyone |
 | Gigs | `POST /api/gigs`, `POST /api/gigs/:id/cancel` | Client (owner) |
-| Gigs | `GET /api/gigs/:id`, `GET /api/gigs/mine` | Participants (anyone for open gigs) |
+| Gigs | `GET /api/gigs/:id`, `GET /api/gigs/mine` | Logged in (private gigs: participants only) |
 | Applications | `POST /api/gigs/:id/apply`, `POST /api/applications/:id/withdraw` | Freelancer |
 | Applications | `GET /api/gigs/:id/applications`, `POST /api/applications/:id/accept` | Owning client |
 | Payments | `POST /api/gigs/:id/fund/order`, `…/fund/verify`, `…/fund/sync` | Owning client |
-| Payments | `POST /api/payments/webhook` | Razorpay (signature-checked) |
-| Escrow | `POST /api/gigs/:id/milestones/:mid/submit` | Assigned freelancer |
-| Escrow | `POST /api/gigs/:id/milestones/:mid/approve`, `…/revision` | Owning client |
+| Payments | `POST /api/payments/webhook` | Razorpay (signature checked) |
+| Stages | `POST /api/gigs/:id/milestones/:mid/submit` | Hired freelancer |
+| Stages | `POST /api/gigs/:id/milestones/:mid/approve`, `…/revision` | Owning client |
 | Disputes | `POST /api/gigs/:id/milestones/:mid/dispute` | Either participant |
 | Disputes | `GET /api/disputes`, `GET /api/disputes/:id`, `POST /api/disputes/:id/respond` | Participants / admin |
 | Disputes | `POST /api/disputes/:id/resolve` | Admin |
 | Payments / earnings | `GET /api/wallet`, `GET /api/wallet/transactions` | Client / freelancer |
 | Reviews | `POST /api/gigs/:id/review`, `GET /api/users/:id` | Participants after completion |
 | Chat | `GET/POST /api/gigs/:id/messages` | Participants / admin |
-| Other | `GET /api/notifications`, `POST /api/notifications/read` | Logged in |
+| Notifications | `GET /api/notifications`, `POST /api/notifications/read` | Logged in |
 | Admin | `GET /api/admin/stats`, `POST /api/admin/refunds/:id/retry` | Admin |
 
-Errors are always shaped as `{ "error": { "message": "...", "code": "..." } }`:
-
-| What can go wrong | Response |
-|---|---|
-| Invalid input (negative budget, short title, bad URL) | 400 `VALIDATION_ERROR` with the field name |
-| Forged or mismatched payment (bad signature, wrong amount or order) | 400 `BAD_SIGNATURE` / `PAYMENT_MISMATCH` |
-| Payment not captured, or the gig can no longer be funded | 409 (and an automatic full refund) |
-| Razorpay unreachable or erroring | 502 `GATEWAY_ERROR`; refunds are queued and retried |
-| Razorpay keys not configured | 503 `PAYMENTS_DISABLED` |
-| Not logged in or expired token | 401 |
-| Wrong role or not the owner | 403 |
-| Missing gig, milestone or dispute | 404 |
-| Invalid state jump, or a duplicate application or review | 409 with a readable reason |
-| Too many requests | 429 |
-| Unexpected error | 500 with a generic message (details only in server logs) |
+</details>
 
 ## Local Setup
 
-**Requirements:** Node.js 20 or newer, and MongoDB 6 or newer installed locally (or an Atlas connection string).
+**You need:** Node.js 22, and either MongoDB 6+ installed locally or a MongoDB Atlas connection string. For payments, a free Razorpay account in **Test Mode**.
 
 ```bash
-git clone <repo-url> skillgig && cd skillgig
+git clone https://github.com/chsnikitha08/SkillGig.git
+cd SkillGig
 
-# 1. Database: transactions need a replica set, so start a local single-node one
-#    on port 27018 (data in server/.mongo-data). Skip this if you use Atlas.
+# 1. API
 cd server
 npm install
-npm run db:dev
+cp .env.example .env          # then fill it in (see Environment Variables)
 
-# 2. API
-cp .env.example .env
-#   set MONGODB_URI=mongodb://127.0.0.1:27018/skillgig?replicaSet=rs0
-#   set JWT_SECRET to the output of: openssl rand -hex 32
-#   set RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET to your Razorpay TEST keys
-ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a-long-password' npm run create-admin
-npm run dev         # http://localhost:5050
+#    Using a local MongoDB instead of Atlas? Money operations need MongoDB
+#    transactions, which need a replica set. This starts one on port 27018:
+npm run db:dev                #    then set MONGODB_URI=mongodb://127.0.0.1:27018/skillgig?replicaSet=rs0
 
-# 3. Frontend (new terminal)
-cd ../client
+npm run dev                   # API on http://localhost:5050
+
+# 2. Website (in a second terminal)
+cd client
 npm install
-npm run dev         # http://localhost:5173 (proxies /api and /socket.io to :5050)
+npm run dev                   # http://localhost:5173 (talks to the API on :5050 automatically)
 ```
 
-Run the API test suite (it starts its own in-memory replica set and needs no setup):
+**Create the admin account** (admins cannot sign up through the website):
 
 ```bash
-cd server && npm test
+cd server
+ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='at-least-12-characters' npm run create-admin
 ```
 
-### Accounts and roles
+Running it again with the same email resets the password. The password is never stored in the code or shown in the app.
 
-There is no demo data: every account is a real sign-up and every payment is a real Razorpay test payment.
-
-- **Clients and freelancers** sign up on the Register page.
-- **The admin** cannot sign up. The API rejects the `admin` role at registration, and the login page doesn't mention it. The only way to create one is `npm run create-admin` on the server, with the email and password passed as environment variables, so admin credentials never appear in the code or the UI. Running it again with the same email resets the password.
-
-**Trying the full flow:** sign up a client and a freelancer (use an incognito window for the second one). The client posts a gig and the freelancer applies. The client accepts and pays with Razorpay using test card `4386 2894 0766 0153` (any future expiry, any CVV, any OTP) or UPI `success@razorpay`. The freelancer's page flips to "Funds secured" live. The freelancer submits, and the client approves or raises a dispute, which the admin resolves. Refunds appear in the Razorpay test dashboard.
+**Try the full flow:** sign up as a client and, in an incognito window, as a freelancer. Post a gig, apply, hire, pay with UPI `success@razorpay`, submit, then approve or raise a dispute and resolve it as the admin.
 
 ## Environment Variables
 
-**server/.env** (see [server/.env.example](server/.env.example))
+**`server/.env`** (template: [server/.env.example](server/.env.example))
 
-| Variable | Purpose |
+| Variable | What it is |
 |---|---|
-| `MONGODB_URI` | MongoDB connection string. It must be a replica set; Atlas clusters are. |
-| `JWT_SECRET` | Long random string for signing tokens (`openssl rand -hex 32`) |
-| `JWT_EXPIRES_IN` | Token lifetime, default `7d` |
-| `CLIENT_URL` | Allowed frontend origin(s) for CORS and Socket.io, comma separated |
+| `MONGODB_URI` | MongoDB connection string (Atlas, or the local replica set above) |
+| `JWT_SECRET` | A long random string used to sign login tokens: `openssl rand -hex 32` |
+| `JWT_EXPIRES_IN` | How long a login lasts, e.g. `7d` |
+| `CLIENT_URL` | The website address(es) allowed to call the API, comma separated |
 | `PORT` | API port, default `5050` |
-| `NODE_ENV` | `development` / `production` |
-| `RAZORPAY_KEY_ID` | Razorpay **test** key id (`rzp_test_…`); also sent to the browser for Checkout |
-| `RAZORPAY_KEY_SECRET` | Razorpay test key secret. Server only, used for signatures and API calls. |
-| `RAZORPAY_WEBHOOK_SECRET` | Optional. The secret set on the Razorpay webhook (events `payment.captured`, `order.paid`). |
+| `NODE_ENV` | `development` locally, `production` when deployed |
+| `RAZORPAY_KEY_ID` | Razorpay **test** key id (`rzp_test_…`). Public, and sent to the browser for checkout. |
+| `RAZORPAY_KEY_SECRET` | Razorpay test key secret. **Server only**, never sent to the browser. |
+| `RAZORPAY_WEBHOOK_SECRET` | Optional. Only needed if you add a Razorpay webhook (events `payment.captured`, `order.paid`). |
 
-**client/.env** (see [client/.env.example](client/.env.example))
+**`client/.env`** (template: [client/.env.example](client/.env.example))
 
-| Variable | Purpose |
+| Variable | What it is |
 |---|---|
-| `VITE_API_URL` | Deployed API base URL, e.g. `https://skillgig-api.onrender.com`. Leave empty locally. |
+| `VITE_API_URL` | The deployed API address, e.g. `https://skillgig-api.onrender.com`. Leave empty when running locally. |
 
-No secrets are committed: `.env` files are git-ignored and only `.env.example` files with empty values are in the repo.
+No secrets are in this repository: real `.env` files are git-ignored, and only empty templates are committed.
 
 ## Deployment
 
-1. **MongoDB Atlas:** create a free M0 cluster and a database user with a strong password. Under Network Access, allow `0.0.0.0/0` (Render's IPs are dynamic). Copy the connection string and add `/skillgig` as the database name.
-2. **Render (API):** create a new Blueprint from this repo. It reads [render.yaml](render.yaml) (root dir `server`, health check `/api/health`). Set `MONGODB_URI`, and set `CLIENT_URL` to the Vercel URL. `JWT_SECRET` is generated automatically.
-   Create the admin once from your machine: `cd server && MONGODB_URI="<atlas uri>" ADMIN_EMAIL=… ADMIN_PASSWORD=… npm run create-admin`.
-3. **Razorpay (test mode):** in the Razorpay Dashboard with **Test Mode** on, go to Account & Settings → API Keys and generate a key; put both values on Render. Optionally add a webhook at `https://<render-url>/api/payments/webhook` with events `payment.captured` and `order.paid`, and set the same secret as `RAZORPAY_WEBHOOK_SECRET`.
-4. **Vercel (client):** import the repo with **Root Directory** `client` (framework: Vite). Set `VITE_API_URL` to the Render URL. [client/vercel.json](client/vercel.json) rewrites all routes to `index.html` for client-side routing.
-5. Update `CLIENT_URL` on Render if the Vercel URL changes, and open both links in an incognito window to verify.
+The live version runs on three free services:
 
-> Render's free tier sleeps after inactivity; the first request can take about 30 seconds to wake it.
+| Part | Service | Settings |
+|---|---|---|
+| Database | MongoDB Atlas | Free M0 cluster; Network Access allows `0.0.0.0/0` (Render's addresses change) |
+| API | Render (Node web service) | Root directory `server`, build `npm ci --omit=dev`, start `npm start`, health check `/api/health`, environment variables as above with `NODE_ENV=production` and `CLIENT_URL=https://skill-gig.vercel.app` |
+| Website | Vercel | Root directory `client`, framework Vite, `VITE_API_URL=https://skillgig-api.onrender.com` ([vercel.json](client/vercel.json) makes page links like `/gigs/123` work) |
 
-**Deployed setup used for this project:** frontend on Vercel (root `client`, `VITE_API_URL=https://skillgig-api.onrender.com`), API on Render as a Node web service (root `server`, build `npm ci --omit=dev`, start `npm start`, Node 22, `CLIENT_URL=https://skill-gig.vercel.app`), database on MongoDB Atlas.
+**To deploy your own copy:**
+
+1. Create the Atlas cluster and copy its connection string (add `/skillgig` before the `?`).
+2. On Render, create a web service from this repository with the settings above (or use [render.yaml](render.yaml) as a Blueprint), and add the environment variables.
+3. In Razorpay (Test Mode), go to Account & Settings → API Keys, generate a key, and add both values on Render.
+4. On Vercel, import the repository with root directory `client` and set `VITE_API_URL` to your Render address.
+5. Set `CLIENT_URL` on Render to your Vercel address, then create the admin account with `npm run create-admin` (pointing `MONGODB_URI` at Atlas).
+
+## Testing
+
+```bash
+cd server
+npm test
+```
+
+The 33 automated tests start their own temporary database and a fake Razorpay, so they need no setup. They cover:
+
+- sign-up, login, roles, and blocking admin sign-up or injection attempts
+- posting, searching and filtering gigs; applying and hiring
+- payment verification: forged signatures, wrong amounts, failed payments, webhooks, recovery after a closed browser
+- the same payment reported three ways at once being counted only once; three simultaneous approvals paying out only once
+- disputes resolved by pay, refund or split; Razorpay refunds, including retrying after an outage
+- reviews, ratings, chat, notifications, and the ledger refusing edits
 
 ## Limitations and Next Steps
 
-- Freelancer payouts and the escrow account itself are simulated (see "What is real and what is simulated" above). The next step would be Razorpay Route or RazorpayX with a verified business account.
-- Submissions are links rather than file uploads.
-- Each account has a single role; a student who wants to both hire and freelance needs two accounts.
+- **Payouts are simulated.** Freelancer earnings are recorded but not sent to a bank, and money is held in SkillGig's own ledger rather than a regulated escrow account. The next step is Razorpay Route or RazorpayX with a verified business account.
+- **Work is shared as links** (Google Drive, Behance, GitHub), not uploaded as files.
+- **One role per account.** Someone who wants to both hire and freelance needs two accounts.
+- **Response time on the free tier.** The API sleeps when idle and takes about 30 seconds to wake.
+- **Dependency update.** `npm audit` reports an advisory for the current version of Zod; upgrading needs a major-version change and is planned after submission.
