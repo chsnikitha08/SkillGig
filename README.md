@@ -250,7 +250,8 @@ No secrets are committed: `.env` files are git-ignored and only `.env.example` f
 ## Deployment
 
 1. **MongoDB Atlas:** create a free M0 cluster and a database user with a strong password. Under Network Access, allow `0.0.0.0/0` (Render's IPs are dynamic). Copy the connection string and add `/skillgig` as the database name.
-2. **Render (API):** create a new Blueprint from this repo. It reads [render.yaml](render.yaml) (root dir `server`, health check `/api/health`). Set `MONGODB_URI`, and set `CLIENT_URL` to the Vercel URL. `JWT_SECRET` is generated automatically. After the first deploy, open the Render shell and run `npm run seed` once.
+2. **Render (API):** create a new Blueprint from this repo. It reads [render.yaml](render.yaml) (root dir `server`, health check `/api/health`). Set `MONGODB_URI`, and set `CLIENT_URL` to the Vercel URL. `JWT_SECRET` is generated automatically.
+   Seed the Atlas database once from your machine: `cd server && MONGODB_URI="<atlas uri>" npm run seed`.
 3. **Vercel (client):** import the repo with **Root Directory** `client` (framework: Vite). Set `VITE_API_URL` to the Render URL. [client/vercel.json](client/vercel.json) rewrites all routes to `index.html` for client-side routing.
 4. Update `CLIENT_URL` on Render if the Vercel URL changes, and open both links in an incognito window to verify.
 
