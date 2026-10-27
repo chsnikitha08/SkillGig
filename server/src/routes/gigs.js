@@ -12,9 +12,10 @@ import { verifySchema } from '../validators/payment.js';
 import { applySchema, createGigSchema, listGigsSchema } from '../validators/gig.js';
 
 const router = Router();
-router.use(requireAuth);
 
+// Browsing open gigs is public, like any marketplace; everything else needs an account.
 router.get('/', validate(listGigsSchema, 'query'), listGigs);
+router.use(requireAuth);
 router.post('/', requireRole('client'), validate(createGigSchema), createGig);
 router.get('/mine', myGigs);
 router.get('/:id', validate(idParam, 'params'), getGig);

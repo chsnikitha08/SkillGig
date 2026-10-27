@@ -1,3 +1,4 @@
+import { Bell } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { http } from '../api/http';
@@ -6,7 +7,7 @@ import { useToast } from '../context/ToastContext';
 import { useFetch } from '../hooks/useFetch';
 import { dateTime } from '../utils/format';
 
-export default function NotificationBell() {
+export default function NotificationBell({ light = false }) {
   const { socket, refreshUser } = useAuth();
   const toast = useToast();
   const { data, setData } = useFetch('/notifications');
@@ -42,14 +43,19 @@ export default function NotificationBell() {
 
   return (
     <div className="relative" ref={ref}>
-      <button type="button" onClick={toggle} className="relative rounded-md px-2 py-1 text-gray-600 hover:bg-gray-100" aria-label="Notifications">
-        🔔
+      <button
+        type="button"
+        onClick={toggle}
+        className={`relative rounded-lg p-2 ${light ? 'text-white/90 hover:bg-white/10' : 'text-gray-600 hover:bg-gray-100'}`}
+        aria-label="Notifications"
+      >
+        <Bell className="h-5 w-5" />
         {data?.unread > 0 && (
           <span className="absolute -right-1 -top-1 rounded-full bg-red-600 px-1.5 text-[10px] font-bold text-white">{data.unread}</span>
         )}
       </button>
       {open && (
-        <div className="absolute right-0 z-40 mt-2 max-h-96 w-80 overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+        <div className="absolute right-0 z-40 mt-2 max-h-96 w-80 overflow-y-auto rounded-xl border text-ink border-gray-200 bg-white shadow-lg">
           {!data?.items?.length ? (
             <p className="p-4 text-sm text-gray-500">No notifications yet.</p>
           ) : (

@@ -150,7 +150,7 @@ function ResolveForm({ dispute, onDone }) {
             key={value}
             type="button"
             onClick={() => setDecision(value)}
-            className={`rounded-md border px-3 py-2 text-sm ${decision === value ? 'border-indigo-600 bg-indigo-50 font-medium text-indigo-700' : 'border-gray-300'}`}
+            className={`rounded-md border px-3 py-2 text-sm ${decision === value ? 'border-brand-600 bg-brand-50 font-medium text-brand-700' : 'border-gray-300'}`}
           >
             {label}
           </button>

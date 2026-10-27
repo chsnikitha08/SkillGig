@@ -1,70 +1,70 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom';
+import { LogOut } from 'lucide-react';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Avatar from './Avatar';
+import Logo from './Logo';
 import NotificationBell from './NotificationBell';
 import { money } from '../utils/format';
 
-const linkCls = ({ isActive }) => `text-sm ${isActive ? 'font-semibold text-indigo-700' : 'text-gray-600 hover:text-gray-900'}`;
-
+/** On the home page the bar sits transparently over the hero photo. */
 export default function Navbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const overlay = useLocation().pathname === '/';
+
+  const linkCls = ({ isActive }) =>
+    `text-sm font-medium transition ${
+      overlay ? (isActive ? 'text-white' : 'text-white/80 hover:text-white') : isActive ? 'text-brand-700' : 'text-gray-600 hover:text-ink'
+    }`;
+
+  const links = [['/gigs', 'Browse gigs']];
+  if (user?.role === 'client') links.push(['/gigs/new', 'Post a gig']);
+  if (user) links.push(['/dashboard', 'Dashboard']);
+  if (user?.role === 'client') links.push(['/wallet', 'Payments']);
+  if (user?.role === 'freelancer') links.push(['/wallet', 'Earnings']);
+  if (user) links.push([user.role === 'admin' ? '/admin' : '/disputes', 'Disputes']);
 
   return (
-    <header className="border-b border-gray-200 bg-white">
-      <nav className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
-        <Link to="/" className="text-lg font-bold text-indigo-700">
-          SkillGig
-        </Link>
-        {user && (
-          <>
-            <NavLink to="/gigs" end className={linkCls}>
-              Browse gigs
+    <header className={overlay ? 'absolute inset-x-0 top-0 z-30' : 'sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur'}>
+      <nav className="container-page flex h-16 items-center gap-8">
+        <Logo light={overlay} />
+        <div className="hidden items-center gap-6 md:flex">
+          {links.map(([to, label]) => (
+            <NavLink key={label} to={to} end={to === '/gigs'} className={linkCls}>
+              {label}
             </NavLink>
-            {user.role === 'client' && (
-              <NavLink to="/gigs/new" className={linkCls}>
-                Post a gig
-              </NavLink>
-            )}
-            <NavLink to="/dashboard" className={linkCls}>
-              Dashboard
-            </NavLink>
-            {user.role !== 'admin' && (
-              <NavLink to="/wallet" className={linkCls}>
-                {user.role === 'client' ? 'Payments' : 'Earnings'}
-              </NavLink>
-            )}
-            {user.role === 'admin' ? (
-              <NavLink to="/admin" className={linkCls}>
-                Disputes
-              </NavLink>
-            ) : (
-              <NavLink to="/disputes" className={linkCls}>
-                Disputes
-              </NavLink>
-            )}
-          </>
-        )}
-        <div className="ml-auto flex items-center gap-4">
+          ))}
+        </div>
+        <div className="ml-auto flex items-center gap-3">
           {user ? (
             <>
               {user.role === 'freelancer' && (
-                <Link to="/wallet" className="rounded-md bg-emerald-50 px-2 py-1 text-sm font-medium text-emerald-700" title="Earnings">
+                <Link
+                  to="/wallet"
+                  className={`hidden rounded-lg px-2.5 py-1 text-sm font-semibold sm:inline ${overlay ? 'bg-white/15 text-white' : 'bg-brand-50 text-brand-700'}`}
+                  title="Earnings"
+                >
                   {money(user.walletBalance)}
                 </Link>
               )}
-              <NotificationBell />
-              <Link to={user.role === 'admin' ? '/admin' : `/users/${user._id}`} className="text-sm text-gray-700">
-                {user.name} <span className="text-xs text-gray-400">({user.role})</span>
+              <NotificationBell light={overlay} />
+              <Link
+                to={user.role === 'admin' ? '/admin' : `/users/${user._id}`}
+                className={`flex items-center gap-2 text-sm font-medium ${overlay ? 'text-white' : 'text-ink'}`}
+              >
+                <Avatar name={user.name} />
+                <span className="hidden lg:inline">{user.name}</span>
               </Link>
               <button
                 type="button"
-                className="text-sm text-gray-500 hover:text-gray-900"
+                title="Log out"
+                className={`rounded-lg p-2 ${overlay ? 'text-white/80 hover:bg-white/10' : 'text-gray-500 hover:bg-gray-100'}`}
                 onClick={() => {
                   logout();
                   navigate('/login');
                 }}
               >
-                Log out
+                <LogOut className="h-4 w-4" />
               </button>
             </>
           ) : (
@@ -72,7 +72,7 @@ export default function Navbar() {
               <NavLink to="/login" className={linkCls}>
                 Log in
               </NavLink>
-              <Link to="/register" className="btn-primary">
+              <Link to="/register" className={overlay ? 'btn-secondary border-white py-2' : 'btn-dark py-2'}>
                 Sign up
               </Link>
             </>

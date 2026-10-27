@@ -1,3 +1,4 @@
+import { Lock, ShieldCheck } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { http } from '../api/http';
@@ -88,7 +89,7 @@ export default function GigDetail() {
           <dl className="space-y-2">
             <Row label="Budget" value={money(gig.budget)} />
             {gig.agreedAmount && <Row label="Agreed price" value={money(gig.agreedAmount)} />}
-            {gig.status === 'in_progress' && <Row label="Payment secured" value={<span className="text-emerald-700">🛡 {money(gig.escrowHeld)}</span>} />}
+            {gig.status === 'in_progress' && <Row label="Payment secured" value={<span className="inline-flex items-center gap-1 text-brand-700"><ShieldCheck className="h-4 w-4" /> {money(gig.escrowHeld)}</span>} />}
             <Row label="Client" value={<>{gig.client.name} <span className="text-gray-400">{rating(gig.client)}</span></>} />
             {gig.freelancer && (
               <Row
@@ -128,7 +129,7 @@ function ProgressTracker({ gig }) {
           <li key={label} className="flex min-w-fit flex-1 items-center gap-2">
             <span
               className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${
-                done ? 'bg-emerald-600 text-white' : active ? 'bg-indigo-600 text-white' : 'bg-gray-200 text-gray-500'
+                done ? 'bg-emerald-600 text-white' : active ? 'bg-brand-600 text-white' : 'bg-gray-200 text-gray-500'
               }`}
             >
               {done ? '✓' : i + 1}
@@ -202,7 +203,7 @@ function NextStep({ gig, isClient, isFreelancer, onChanged }) {
           Pay <b>{money(gig.agreedAmount)}</b> so {gig.freelancer.name} can start. SkillGig keeps your payment safe and only pays the freelancer
           when you approve the work.
         </p>
-        <p className="mt-1 text-xs">🔒 Secure checkout powered by Razorpay.</p>
+        <p className="mt-1 inline-flex items-center gap-1 text-xs"><Lock className="h-3.5 w-3.5" /> Secure checkout powered by Razorpay</p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <button type="button" className="btn-primary" disabled={paying || pending} onClick={pay}>
             {paying ? 'Processing payment…' : `Pay ${money(gig.agreedAmount)} securely`}
@@ -220,15 +221,15 @@ function NextStep({ gig, isClient, isFreelancer, onChanged }) {
   }
   if (gig.status === 'in_progress' && isFreelancer) {
     tone = 'bg-emerald-50 border-emerald-200 text-emerald-900';
-    body = `🛡 Payment secured. ${money(gig.escrowHeld)} is reserved for you and will be paid as the client approves your work.`;
+    body = `Payment secured. ${money(gig.escrowHeld)} is reserved for you and will be paid as the client approves your work.`;
   }
   if (gig.status === 'in_progress' && isClient) {
-    tone = 'bg-indigo-50 border-indigo-200 text-indigo-900';
-    body = `🛡 Your payment of ${money(gig.agreedAmount)} is held safely. The freelancer is paid only when you approve their work.`;
+    tone = 'bg-brand-50 border-brand-200 text-brand-900';
+    body = `Your payment of ${money(gig.agreedAmount)} is held safely. The freelancer is paid only when you approve their work.`;
   }
   if (gig.status === 'completed') {
     tone = 'bg-emerald-50 border-emerald-200 text-emerald-900';
-    body = '🎉 This project is complete.';
+    body = 'This project is complete. Thanks for using SkillGig!';
   }
   if (gig.status === 'cancelled') body = 'This gig was cancelled. Any payment made for it is refunded automatically.';
 
@@ -236,7 +237,14 @@ function NextStep({ gig, isClient, isFreelancer, onChanged }) {
   if (!body && !canCancel) return null;
   return (
     <section className={`rounded-lg border p-4 ${tone}`}>
-      {typeof body === 'string' ? <p>{body}</p> : body}
+      {typeof body === 'string' ? (
+        <p className="flex items-start gap-2">
+          {gig.status === 'in_progress' && <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0" />}
+          <span>{body}</span>
+        </p>
+      ) : (
+        body
+      )}
       {canCancel && (
         <button type="button" className="btn-secondary mt-3" disabled={pending || paying} onClick={cancel}>
           Cancel gig

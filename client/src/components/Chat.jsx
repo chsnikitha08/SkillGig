@@ -49,7 +49,7 @@ export default function Chat({ gigId, readOnly }) {
             const mine = m.sender._id === user._id;
             return (
               <div key={m._id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}>
-                <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${mine ? 'bg-indigo-600 text-white' : 'bg-white ring-1 ring-gray-200'}`}>
+                <div className={`max-w-[75%] rounded-lg px-3 py-2 text-sm ${mine ? 'bg-brand-600 text-white' : 'bg-white ring-1 ring-gray-200'}`}>
                   {!mine && (
                     <p className="text-xs font-semibold">
                       {m.sender.name}
@@ -57,7 +57,7 @@ export default function Chat({ gigId, readOnly }) {
                     </p>
                   )}
                   <p className="whitespace-pre-line">{m.text}</p>
-                  <p className={`mt-1 text-[10px] ${mine ? 'text-indigo-200' : 'text-gray-400'}`}>{dateTime(m.createdAt)}</p>
+                  <p className={`mt-1 text-[10px] ${mine ? 'text-brand-200' : 'text-gray-400'}`}>{dateTime(m.createdAt)}</p>
                 </div>
               </div>
             );

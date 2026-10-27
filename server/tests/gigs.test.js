@@ -30,6 +30,9 @@ describe('gigs and applications', () => {
     await api().post('/api/gigs').set(c.auth).send(gigBody({ title: 'Type my physics notes', skillsRequired: ['typing'], budget: 200, milestones: undefined }));
     const all = await api().get('/api/gigs').set(c.auth);
     assert.equal(all.body.total, 2);
+    // Visitors can browse without logging in, but can't open private actions.
+    assert.equal((await api().get('/api/gigs')).body.total, 2);
+    assert.equal((await api().get('/api/gigs/mine')).status, 401);
     const byQ = await api().get('/api/gigs?q=physics').set(c.auth);
     assert.equal(byQ.body.total, 1);
     const bySkill = await api().get('/api/gigs?skill=design').set(c.auth);

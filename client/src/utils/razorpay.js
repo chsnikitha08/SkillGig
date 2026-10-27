@@ -40,7 +40,7 @@ export async function payForGig(gigId) {
       name: 'SkillGig',
       description: `Secure payment for "${order.gig.title}"`,
       prefill: order.prefill,
-      theme: { color: '#4f46e5' },
+      theme: { color: '#5bbb7b' },
       handler: (resp) =>
         resolve({ orderId: resp.razorpay_order_id, paymentId: resp.razorpay_payment_id, signature: resp.razorpay_signature }),
       modal: { ondismiss: () => resolve({ cancelled: true }) },

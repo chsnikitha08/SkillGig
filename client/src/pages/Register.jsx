@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { errorMessage } from '../api/http';
 import { useAuth } from '../context/AuthContext';
+import AuthLayout from '../components/AuthLayout';
 import { ErrorBanner, Field } from '../components/ui';
 
 export default function Register() {
@@ -28,9 +29,8 @@ export default function Register() {
   };
 
   return (
-    <div className="mx-auto max-w-sm py-10">
-      <h1 className="mb-6 text-2xl font-semibold">Create your account</h1>
-      <form onSubmit={submit} className="card space-y-4">
+    <AuthLayout title="Create your account" subtitle="Join SkillGig to hire students or start earning from your skills.">
+      <form onSubmit={submit} className="space-y-5">
         <ErrorBanner message={error} />
         <fieldset>
           <legend className="label">I want to</legend>
@@ -43,7 +43,7 @@ export default function Register() {
                 key={role}
                 type="button"
                 onClick={() => setForm({ ...form, role })}
-                className={`rounded-md border px-3 py-2 text-sm ${form.role === role ? 'border-indigo-600 bg-indigo-50 font-medium text-indigo-700' : 'border-gray-300'}`}
+                className={`rounded-lg border px-3 py-3 text-sm ${form.role === role ? 'border-brand-500 bg-brand-50 font-semibold text-brand-700' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}
               >
                 {label}
               </button>
@@ -64,13 +64,13 @@ export default function Register() {
             <input className="input" value={form.skills} onChange={set('skills')} />
           </Field>
         )}
-        <button className="btn-primary w-full" disabled={pending}>
+        <button className="btn-primary w-full py-3" disabled={pending}>
           {pending ? 'Creating account…' : 'Sign up'}
         </button>
         <p className="text-center text-sm text-gray-600">
           Already have an account? <Link to="/login" className="link">Log in</Link>
         </p>
       </form>
-    </div>
+    </AuthLayout>
   );
 }
