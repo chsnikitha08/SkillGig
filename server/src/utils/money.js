@@ -1,6 +1,6 @@
 /**
  * Re-scales milestone amounts to a new total (the accepted quote) while keeping
- * their proportions. All amounts are whole credits; the rounding remainder goes to
+ * their proportions. All amounts are whole rupees; the rounding remainder goes to
  * the last milestone so the parts always add up to exactly `total`.
  */
 export function scaleAmounts(amounts, total) {

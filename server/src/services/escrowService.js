@@ -1,15 +1,7 @@
 /**
- * All money movement lives here. Controllers never touch balances directly.
- *
- * Funding (money in from Razorpay) is in paymentService; this file covers what
- * happens to escrow afterwards. Every operation follows the same pattern inside
- * one MongoDB transaction:
- *   1. load + authorize + check the state machine (gives readable 403/409 errors)
- *   2. conditional write that only matches the expected current state
- *      (so a racing duplicate request matches nothing and aborts)
- *   3. balance change (freelancer earnings) or a queued Razorpay refund
- *   4. one append-only ledger entry with a unique key
- * If any step fails the whole transaction rolls back.
+ * What happens to escrowed money after funding (submit, revise, approve, settle).
+ * Each write is conditional on the expected current state, so a duplicate or
+ * racing request matches nothing instead of moving money twice.
  */
 import mongoose from 'mongoose';
 import { Gig } from '../models/Gig.js';
@@ -38,7 +30,6 @@ export function findMilestone(gig, mid) {
   return ms;
 }
 
-/* ------------------------------------------------------------------ submit / revise */
 
 export async function submitMilestone(gigId, mid, user, { note, link }) {
   const gig = await findGigOr404(gigId);
@@ -86,7 +77,6 @@ export async function requestRevision(gigId, mid, user, { note }) {
   return { gig: updated };
 }
 
-/* ------------------------------------------------------------------ settle */
 
 /**
  * Moves a milestone's escrowed amount out: `toFreelancer` to the freelancer's earnings,

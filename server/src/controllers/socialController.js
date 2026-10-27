@@ -10,13 +10,11 @@ import { emitToGig } from '../services/realtime.js';
 import { notify } from '../services/notificationService.js';
 import { GIG_STATUS } from '../services/stateMachine.js';
 
-/* ---------- reviews ---------- */
 
 export async function review(req, res) {
   res.status(201).json(await leaveReview(req.valid.params.id, req.user, req.valid.body));
 }
 
-/* ---------- public profile ---------- */
 
 export async function profile(req, res) {
   const user = await User.findById(req.valid.params.id).select('name role bio skills ratingSum ratingCount completedGigs createdAt');
@@ -29,7 +27,6 @@ export async function profile(req, res) {
   res.json({ user, reviews });
 }
 
-/* ---------- gig chat ---------- */
 
 async function chatGig(req) {
   const gig = await Gig.findById(req.valid.params.id);
@@ -56,7 +53,6 @@ export async function sendMessage(req, res) {
   res.status(201).json({ message });
 }
 
-/* ---------- notifications ---------- */
 
 export async function listNotifications(req, res) {
   const [items, unread] = await Promise.all([

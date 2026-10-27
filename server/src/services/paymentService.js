@@ -1,16 +1,7 @@
 /**
- * Money in (Razorpay payment -> gig escrow) and money back out to clients
- * (Razorpay refunds).
- *
- * Funding flow:
- *   1. createFundingOrder: server creates a Razorpay order for exactly the agreed price.
- *   2. Browser opens Razorpay Checkout; on success it gets payment_id + signature.
- *   3. verifyCheckout: server checks the signature AND fetches the payment from
- *      Razorpay (amount, order, status) before trusting it.
- *   4. confirmFunding: one transaction marks the payment paid, moves the gig to
- *      in_progress, and writes the ledger entry.
- * The webhook and syncFunding call the same idempotent confirmFunding, so a payment
- * is never lost if the browser closes after paying, and never counted twice.
+ * Money in from Razorpay (order -> checkout -> verify -> confirmFunding) and
+ * refunds back out. Checkout, the webhook and sync all end in the same idempotent
+ * confirmFunding, so a payment is never lost or counted twice.
  */
 import mongoose from 'mongoose';
 import { Gig } from '../models/Gig.js';
@@ -27,7 +18,6 @@ import { gigChanged } from './realtime.js';
 const PAISE = 100;
 const ORDER_REUSE_MS = 30 * 60 * 1000;
 
-/* ---------------------------------------------------------------- 1. order */
 
 export async function createFundingOrder(gigId, user) {
   const gig = await findGigOr404(gigId);
@@ -63,7 +53,6 @@ export async function createFundingOrder(gigId, user) {
   };
 }
 
-/* ---------------------------------------------------------------- 2. verify */
 
 /** Asks Razorpay for the real payment state; never trust what the browser says. */
 async function fetchVerifiedPayment(payment, razorpayPaymentId) {
@@ -111,7 +100,6 @@ export async function syncFunding(gigId, user) {
   return result ?? { gig: await Gig.findById(gig._id), alreadyDone: false, found: false };
 }
 
-/* ---------------------------------------------------------------- webhook */
 
 export async function handleWebhook(rawBody, signature) {
   if (!getGateway().verifyWebhookSignature(rawBody, signature)) throw badRequest('Invalid webhook signature', 'BAD_SIGNATURE');
@@ -127,7 +115,6 @@ export async function handleWebhook(rawBody, signature) {
   return { ok: true };
 }
 
-/* ---------------------------------------------------------------- 3. confirm */
 
 /**
  * Idempotent: safe to call from the checkout callback, the webhook and sync at the
@@ -222,7 +209,6 @@ export async function confirmFunding(paymentDocId, razorpayPaymentId) {
   return { gig, alreadyDone };
 }
 
-/* ---------------------------------------------------------------- refunds */
 
 /**
  * Sends one queued refund to Razorpay. The conditional status update means two

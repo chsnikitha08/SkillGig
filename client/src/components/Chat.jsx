@@ -83,7 +83,6 @@ export default function Chat({ gigId, readOnly }) {
 function Linkified({ text, mine }) {
   return text.split(/(https?:\/\/[^\s]+)/g).map((part, i) =>
     /^https?:\/\//.test(part) ? (
-      // eslint-disable-next-line react/no-array-index-key
       <a key={i} href={part} target="_blank" rel="noreferrer noopener" className={`underline ${mine ? 'text-white' : 'text-brand-700'}`}>
         {part}
       </a>

@@ -15,7 +15,7 @@ export default function NotificationBell({ light = false }) {
   const ref = useRef(null);
 
   // Live notifications: prepend, bump the counter, show a toast, and refresh the
-  // wallet balance in case money moved.
+  // current user in case their earnings or rating changed.
   useEffect(() => {
     if (!socket) return undefined;
     const onNew = (n) => {

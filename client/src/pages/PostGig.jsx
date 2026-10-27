@@ -78,7 +78,6 @@ export default function PostGig() {
         {useMilestones && (
           <div className="space-y-2 rounded-md bg-gray-50 p-3">
             {milestones.map((m, i) => (
-              // eslint-disable-next-line react/no-array-index-key
               <div key={i} className="flex gap-2">
                 <input className="input" required placeholder={`Stage ${i + 1}, e.g. First draft`} value={m.title} onChange={(e) => updateMs(i, 'title', e.target.value)} />
                 <input className="input w-32" required type="number" min="1" placeholder="₹" value={m.amount} onChange={(e) => updateMs(i, 'amount', e.target.value)} />

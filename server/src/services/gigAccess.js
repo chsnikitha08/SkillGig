@@ -6,7 +6,7 @@ export const isClientOf = (gig, user) => (gig.client._id ?? gig.client).equals(u
 export const isFreelancerOf = (gig, user) => Boolean(gig.freelancer) && (gig.freelancer._id ?? gig.freelancer).equals(user._id);
 export const isParticipant = (gig, user) => isClientOf(gig, user) || isFreelancerOf(gig, user);
 
-/** Open gigs are visible to every logged-in user; after that only to the two parties and admins. */
+/** Open gigs are visible to everyone; after hiring, only to the two parties and admins. */
 export function canView(gig, user) {
   return gig.status === GIG_STATUS.OPEN || isParticipant(gig, user) || user.role === 'admin';
 }

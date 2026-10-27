@@ -5,7 +5,7 @@ import { Refund } from '../src/models/Refund.js';
 import { Transaction } from '../src/models/Transaction.js';
 import { retryRefunds } from '../src/services/paymentService.js';
 import {
-  acceptedGig, api, balanceOf, createAdmin, flush, fundedGig, gateway, gigBody, payForGig, registerUser, resetDb, setup, teardown,
+  acceptedGig, api, balanceOf, createAdmin, flush, fundedGig, gateway, gigBody, registerUser, resetDb, setup, teardown,
 } from './helpers.js';
 
 before(setup);

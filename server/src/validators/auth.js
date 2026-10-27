@@ -10,7 +10,7 @@ export const registerSchema = z.object({
   name: z.string().trim().min(2, 'must be at least 2 characters').max(80),
   email: z.string().trim().toLowerCase().email('must be a valid email'),
   password: z.string().min(8, 'must be at least 8 characters').max(100),
-  // Admins are created by the seed script only, never through public signup.
+  // Admins are created with `npm run create-admin`, never through public signup.
   role: z.enum(['client', 'freelancer']),
   skills,
 });

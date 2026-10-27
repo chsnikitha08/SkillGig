@@ -20,13 +20,10 @@ export function loadCheckout() {
 }
 
 /**
- * Full payment flow for a gig. Resolves with the server's response once the payment
- * is verified, or with { cancelled: true } if the user closed the checkout.
- *  1. server creates the order (amount decided server-side)
- *  2. Razorpay Checkout collects the payment
- *  3. server verifies the signature and the payment with Razorpay
- * If step 3 fails on the network, we ask the server to sync with Razorpay instead,
- * so a successful payment is never lost.
+ * Opens Razorpay Checkout for a gig and verifies the result on the server.
+ * Resolves with { cancelled: true } if the user closes the checkout. If the verify
+ * call fails on the network, falls back to a server-side sync so a completed
+ * payment is never lost.
  */
 export async function payForGig(gigId) {
   const [Razorpay, { data: order }] = await Promise.all([loadCheckout(), http.post(`/gigs/${gigId}/fund/order`)]);

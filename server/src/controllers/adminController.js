@@ -4,12 +4,8 @@ import { User } from '../models/User.js';
 import { Dispute } from '../models/Dispute.js';
 import { Refund } from '../models/Refund.js';
 import { notFound } from '../utils/AppError.js';
+import { sumField } from '../utils/aggregate.js';
 import { processRefund } from '../services/paymentService.js';
-
-const sumField = async (Model, match, field) => {
-  const [r] = await Model.aggregate([{ $match: match }, { $group: { _id: null, total: { $sum: `$${field}` } } }]);
-  return r?.total ?? 0;
-};
 
 /**
  * Platform overview plus a ledger reconciliation. Every rupee paid in through

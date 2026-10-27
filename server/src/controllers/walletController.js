@@ -3,11 +3,7 @@ import { Payment } from '../models/Payment.js';
 import { Refund } from '../models/Refund.js';
 import { Transaction } from '../models/Transaction.js';
 import { GIG_STATUS } from '../services/stateMachine.js';
-
-const sum = async (Model, match, field) => {
-  const [r] = await Model.aggregate([{ $match: match }, { $group: { _id: null, total: { $sum: `$${field}` } } }]);
-  return r?.total ?? 0;
-};
+import { sumField } from '../utils/aggregate.js';
 
 /**
  * Freelancers: earnings released to them, plus what is in escrow for their active gigs.
@@ -16,14 +12,14 @@ const sum = async (Model, match, field) => {
 export async function getWallet(req, res) {
   const { _id, role, walletBalance } = req.user;
   if (role === 'freelancer') {
-    const inEscrow = await sum(Gig, { status: GIG_STATUS.IN_PROGRESS, freelancer: _id }, 'escrowHeld');
+    const inEscrow = await sumField(Gig, { status: GIG_STATUS.IN_PROGRESS, freelancer: _id }, 'escrowHeld');
     return res.json({ earnings: walletBalance, inEscrow });
   }
   const [paid, inEscrow, refunded, pendingRefunds] = await Promise.all([
-    sum(Payment, { client: _id, status: 'paid' }, 'amount'),
-    sum(Gig, { status: GIG_STATUS.IN_PROGRESS, client: _id }, 'escrowHeld'),
-    sum(Refund, { client: _id, status: 'processed' }, 'amount'),
-    sum(Refund, { client: _id, status: { $ne: 'processed' } }, 'amount'),
+    sumField(Payment, { client: _id, status: 'paid' }, 'amount'),
+    sumField(Gig, { status: GIG_STATUS.IN_PROGRESS, client: _id }, 'escrowHeld'),
+    sumField(Refund, { client: _id, status: 'processed' }, 'amount'),
+    sumField(Refund, { client: _id, status: { $ne: 'processed' } }, 'amount'),
   ]);
   res.json({ paid, inEscrow, refunded, pendingRefunds });
 }
